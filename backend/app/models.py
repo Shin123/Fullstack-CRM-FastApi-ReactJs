@@ -191,8 +191,12 @@ class ProductUpdate(SQLModel):
 
 class Product(ProductBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    category_id: uuid.UUID = Field(
-        foreign_key="category.id", nullable=False, ondelete="CASCADE", index=True
+    category_id: uuid.UUID | None = Field(
+        default=None,
+        foreign_key="category.id",
+        nullable=True,
+        ondelete="CASCADE",
+        index=True,
     )
     slug: str = Field(
         min_length=1,
@@ -253,7 +257,7 @@ class Product(ProductBase, table=True):
 
 class ProductPublic(ProductBase):
     id: uuid.UUID
-    category_id: uuid.UUID
+    category_id: uuid.UUID | None = None
     slug: str
     created_at: datetime
     updated_at: datetime

@@ -192,9 +192,10 @@ def get_products(
 
 
 def create_product(*, session: Session, product_in: ProductCreate) -> Product:
-    category = get_category(session=session, category_id=product_in.category_id)
-    if not category:
-        raise ValueError("Category not found")
+    if product_in.category_id:
+        category = get_category(session=session, category_id=product_in.category_id)
+        if not category:
+            raise ValueError("Category not found")
 
     now = datetime.now(timezone.utc)
     base_slug = _slugify(product_in.name)
