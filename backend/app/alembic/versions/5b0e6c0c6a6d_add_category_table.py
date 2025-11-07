@@ -5,6 +5,7 @@ Revises: 1a31ce608336
 Create Date: 2024-08-01 00:00:00.000000
 
 """
+
 from alembic import op
 import sqlalchemy as sa
 import sqlmodel.sql.sqltypes

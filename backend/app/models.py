@@ -173,7 +173,7 @@ class ProductBase(SQLModel):
 
 
 class ProductCreate(ProductBase):
-    category_id: uuid.UUID
+    category_id: uuid.UUID | None = None
 
 
 class ProductUpdate(SQLModel):
@@ -261,6 +261,50 @@ class ProductPublic(ProductBase):
 
 class ProductsPublic(SQLModel):
     data: list[ProductPublic]
+    count: int
+
+
+# Customer
+class CustomerBase(SQLModel):
+    name: str = Field(max_length=255)
+    phone: str = Field(max_length=50, unique=True, index=True)
+    email: EmailStr | None = Field(
+        default=None, max_length=255, unique=False, index=True
+    )
+    address: str | None = Field(default=None, sa_column=Column(sa.Text))
+
+
+class CustomerCreate(CustomerBase):
+    pass
+
+
+class CustomerUpdate(SQLModel):
+    name: str | None = Field(default=None, max_length=255)
+    phone: str | None = Field(default=None, max_length=50)
+    email: EmailStr | None = Field(default=None, max_length=255)
+    address: str | None = Field(default=None)
+
+
+class Customer(CustomerBase, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    created_at: datetime = Field(
+        default_factory=utc_now,
+        nullable=False,
+        sa_column_kwargs={"server_default": "timezone('utc', now())"},
+    )
+    updated_at: datetime = Field(
+        default_factory=utc_now,
+        nullable=False,
+        sa_column_kwargs={"server_default": "timezone('utc', now())"},
+    )
+
+
+class CustomerPublic(CustomerBase):
+    id: uuid.UUID
+
+
+class CustomersPublic(SQLModel):
+    data: list[CustomerPublic]
     count: int
 
 

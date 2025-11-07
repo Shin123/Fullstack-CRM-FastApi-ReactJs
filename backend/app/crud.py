@@ -10,6 +10,9 @@ from app.models import (
     Category,
     CategoryCreate,
     CategoryUpdate,
+    Customer,
+    CustomerCreate,
+    CustomerUpdate,
     Item,
     ItemCreate,
     Product,
@@ -145,7 +148,11 @@ def _slugify(value: str) -> str:
 
 def _extract_slug_base(slug: str) -> str:
     base, separator, suffix = slug.rpartition("-")
-    if separator and len(suffix) == 5 and all(ch in HEX_DIGITS for ch in suffix.lower()):
+    if (
+        separator
+        and len(suffix) == 5
+        and all(ch in HEX_DIGITS for ch in suffix.lower())
+    ):
         return base
     return slug
 
@@ -233,4 +240,65 @@ def update_product(
 
 def delete_product(*, session: Session, db_product: Product) -> None:
     session.delete(db_product)
+    session.commit()
+
+
+def get_customer(*, session: Session, customer_id: uuid.UUID) -> Customer | None:
+    return session.get(Customer, customer_id)
+
+
+def get_customer_by_phone(*, session: Session, phone: str) -> Customer | None:
+    statement = select(Customer).where(Customer.phone == phone)
+    return session.exec(statement).first()
+
+
+def get_customers(
+    *, session: Session, skip: int = 0, limit: int = 100
+) -> tuple[list[Customer], int]:
+    count_statement = select(func.count()).select_from(Customer)
+    count = session.exec(count_statement).one()
+    statement = select(Customer).offset(skip).limit(limit)
+    customers = session.exec(statement).all()
+    return customers, count
+
+
+def create_customer(*, session: Session, customer_in: CustomerCreate) -> Customer:
+    if get_customer_by_phone(session=session, phone=customer_in.phone):
+        raise ValueError("Phone number already registered")
+
+    now = datetime.now(timezone.utc)
+    db_customer = Customer.model_validate(
+        customer_in, update={"created_at": now, "updated_at": now}
+    )
+    session.add(db_customer)
+    session.commit()
+    session.refresh(db_customer)
+    return db_customer
+
+
+def update_customer(
+    *, session: Session, db_customer: Customer, customer_in: CustomerUpdate
+) -> Customer:
+    update_data = customer_in.model_dump(exclude_unset=True)
+    if not update_data:
+        return db_customer
+
+    if "phone" in update_data and update_data["phone"] != db_customer.phone:
+        if get_customer_by_phone(session=session, phone=update_data["phone"]):
+            raise ValueError("Phone number already registered")
+
+    if "email" in update_data and update_data["email"]:
+        # Optional: Add validation for email if needed in the future
+        pass
+
+    update_data["updated_at"] = datetime.now(timezone.utc)
+    db_customer.sqlmodel_update(update_data)
+    session.add(db_customer)
+    session.commit()
+    session.refresh(db_customer)
+    return db_customer
+
+
+def delete_customer(*, session: Session, db_customer: Customer) -> None:
+    session.delete(db_customer)
     session.commit()
