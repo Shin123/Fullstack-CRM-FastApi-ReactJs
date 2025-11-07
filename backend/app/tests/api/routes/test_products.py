@@ -36,6 +36,7 @@ def test_create_product(
     category = create_random_category(db)
     data = {
         "name": "Sneakers",
+        "sku": f"SKU-{uuid.uuid4().hex[:8]}",
         "description": "Comfortable running shoes",
         "thumbnail_image": "https://example.com/sneakers-thumb.jpg",
         "images": ["https://example.com/sneakers-1.jpg"],
@@ -54,6 +55,7 @@ def test_create_product(
     content = response.json()
     assert content["name"] == data["name"]
     assert content["description"] == data["description"]
+    assert content["sku"] == data["sku"]
     assert content["thumbnail_image"] == data["thumbnail_image"]
     assert content["images"] == data["images"]
     assert content["category_id"] == str(category.id)
@@ -72,6 +74,7 @@ def test_create_product_same_name_generates_unique_slug(
     category = create_random_category(db)
     data = {
         "name": product.name,
+        "sku": f"SKU-{uuid.uuid4().hex[:8]}",
         "category_id": str(category.id),
         "price": "10.00",
     }
@@ -92,6 +95,7 @@ def test_create_product_invalid_category(
 ) -> None:
     data = {
         "name": "Invalid Category",
+        "sku": f"SKU-{uuid.uuid4().hex[:8]}",
         "category_id": str(uuid.uuid4()),
         "price": "10.00",
     }
@@ -116,6 +120,7 @@ def test_read_product(
     content = response.json()
     assert content["id"] == str(product.id)
     assert content["name"] == product.name
+    assert content["sku"] == product.sku
     assert content["slug"] == product.slug
     assert content["category_id"] == str(product.category_id)
 
@@ -168,6 +173,7 @@ def test_update_product(
     category = create_random_category(db)
     data = {
         "name": "Updated Name",
+        "sku": f"SKU-{uuid.uuid4().hex[:8]}",
         "category_id": str(category.id),
         "price": "29.99",
         "status": ProductStatus.draft.value,
@@ -180,6 +186,7 @@ def test_update_product(
     assert response.status_code == 200
     content = response.json()
     assert content["name"] == data["name"]
+    assert content["sku"] == data["sku"]
     expected_base = _slugify(data["name"])
     _assert_slug_with_suffix(content["slug"], expected_base)
     assert content["category_id"] == data["category_id"]
@@ -255,3 +262,23 @@ def test_delete_product_not_found(
     )
     assert response.status_code == 404
     assert response.json()["detail"] == "Product not found"
+
+
+def test_create_product_duplicate_sku(
+    client: TestClient, superuser_token_headers: dict[str, str], db: Session
+) -> None:
+    product = create_random_product(db)
+    category = create_random_category(db)
+    data = {
+        "name": "Duplicate SKU Product",
+        "sku": product.sku,
+        "category_id": str(category.id),
+        "price": "15.00",
+    }
+    response = client.post(
+        f"{settings.API_V1_STR}/products/",
+        headers=superuser_token_headers,
+        json=data,
+    )
+    assert response.status_code == 409
+    assert response.json()["detail"] == "SKU already exists"

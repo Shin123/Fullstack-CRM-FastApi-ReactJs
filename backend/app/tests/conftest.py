@@ -7,7 +7,7 @@ from sqlmodel import Session, delete
 from app.core.config import settings
 from app.core.db import engine, init_db
 from app.main import app
-from app.models import Category, Item, Product, User
+from app.models import Category, Item, Product, User, Customer
 from app.tests.utils.user import authentication_token_from_email
 from app.tests.utils.utils import get_superuser_token_headers
 
@@ -21,6 +21,7 @@ def db() -> Generator[Session, None, None]:
         session.exec(delete(Item))
         session.exec(delete(Category))
         session.exec(delete(User))
+        session.exec(delete(Customer))
         session.commit()
 
 

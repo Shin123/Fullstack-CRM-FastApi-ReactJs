@@ -162,6 +162,7 @@ class ProductBadge(str, Enum):
 
 class ProductBase(SQLModel):
     name: str = Field(min_length=1, max_length=255)
+    sku: str = Field(min_length=1, max_length=64)
     thumbnail_image: str | None = Field(default=None, max_length=2048)
     images: list[str] = Field(default_factory=list)
     description: str | None = Field(default=None, max_length=2048)
@@ -178,6 +179,7 @@ class ProductCreate(ProductBase):
 
 class ProductUpdate(SQLModel):
     name: str | None = Field(default=None, min_length=1, max_length=255)  # type: ignore
+    sku: str | None = Field(default=None, min_length=1, max_length=64)
     thumbnail_image: str | None = Field(default=None, max_length=2048)
     images: list[str] | None = None
     description: str | None = Field(default=None, max_length=2048)
@@ -202,6 +204,11 @@ class Product(ProductBase, table=True):
         min_length=1,
         max_length=255,
         sa_column=Column(sa.String(length=255), nullable=False, unique=True),
+    )
+    sku: str = Field(
+        min_length=1,
+        max_length=64,
+        sa_column=Column(sa.String(length=64), nullable=False, unique=True),
     )
     thumbnail_image: str | None = Field(
         default=None,

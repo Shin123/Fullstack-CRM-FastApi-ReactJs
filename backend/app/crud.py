@@ -138,6 +138,11 @@ def get_product_by_slug(*, session: Session, slug: str) -> Product | None:
     return session.exec(statement).first()
 
 
+def get_product_by_sku(*, session: Session, sku: str) -> Product | None:
+    statement = select(Product).where(Product.sku == sku)
+    return session.exec(statement).first()
+
+
 def _slugify(value: str) -> str:
     value = value.strip().lower()
     value = re.sub(r"[^\w\s-]", "", value)
@@ -196,6 +201,8 @@ def create_product(*, session: Session, product_in: ProductCreate) -> Product:
         category = get_category(session=session, category_id=product_in.category_id)
         if not category:
             raise ValueError("Category not found")
+    if get_product_by_sku(session=session, sku=product_in.sku):
+        raise ValueError("SKU already exists")
 
     now = datetime.now(timezone.utc)
     base_slug = _slugify(product_in.name)
@@ -230,6 +237,10 @@ def update_product(
         current_base = _extract_slug_base(db_product.slug)
         if new_base != current_base:
             update_data["slug"] = _generate_unique_product_slug(session, new_base)
+    if "sku" in update_data and update_data["sku"] is not None:
+        new_sku = update_data["sku"]
+        if new_sku != db_product.sku and get_product_by_sku(session=session, sku=new_sku):
+            raise ValueError("SKU already exists")
 
     update_data["updated_at"] = datetime.now(timezone.utc)
     db_product.sqlmodel_update(update_data)

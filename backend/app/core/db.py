@@ -5,6 +5,8 @@ from app.core.config import settings
 from app.models import (
     Category,
     CategoryCreate,
+    Customer,
+    CustomerCreate,
     Product,
     ProductCreate,
     User,
@@ -61,6 +63,7 @@ def init_db(session: Session) -> None:
             default_products = [
                 ProductCreate(
                     name="Sample Product",
+                    sku="SKU-DEFAULT",
                     description="Default seeded product",
                     category_id=category.id,
                     price="0",
@@ -75,3 +78,19 @@ def init_db(session: Session) -> None:
                     crud.create_product(session=session, product_in=product_in)
                 except ValueError:
                     continue
+
+    customer_exists = session.exec(select(Customer)).first()
+    if not customer_exists:
+        default_customers = [
+            CustomerCreate(
+                name="Example Customer",
+                phone="+10000000000",
+                email="customer@example.com",
+                address="123 Main Street",
+            )
+        ]
+        for customer_in in default_customers:
+            try:
+                crud.create_customer(session=session, customer_in=customer_in)
+            except ValueError:
+                continue

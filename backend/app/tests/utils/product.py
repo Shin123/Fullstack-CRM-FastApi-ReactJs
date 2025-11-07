@@ -13,6 +13,7 @@ def create_random_product(db: Session) -> Product:
     name = f"Product {random_lower_string()}"
     product_in = ProductCreate(
         name=name,
+        sku=f"SKU-{random_lower_string()[:8]}",
         category_id=category.id,
         price=Decimal("9.99"),
         price_origin=Decimal("19.99"),
