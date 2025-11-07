@@ -43,6 +43,7 @@ def test_create_product(
         "category_id": str(category.id),
         "price": "59.90",
         "price_origin": "79.90",
+        "tax_rate": 10,
         "stock": 10,
         "status": ProductStatus.published.value,
     }
@@ -63,6 +64,7 @@ def test_create_product(
     _assert_slug_with_suffix(content["slug"], expected_base)
     assert _decimal(content["price"]) == _decimal(data["price"])
     assert _decimal(content["price_origin"]) == _decimal(data["price_origin"])
+    assert content["tax_rate"] == data["tax_rate"]
     assert content["stock"] == data["stock"]
     assert content["status"] == data["status"]
 
@@ -123,6 +125,7 @@ def test_read_product(
     assert content["sku"] == product.sku
     assert content["slug"] == product.slug
     assert content["category_id"] == str(product.category_id)
+    assert content["tax_rate"] == product.tax_rate
 
 
 def test_read_product_not_found(
@@ -176,6 +179,7 @@ def test_update_product(
         "sku": f"SKU-{uuid.uuid4().hex[:8]}",
         "category_id": str(category.id),
         "price": "29.99",
+        "tax_rate": 8,
         "status": ProductStatus.draft.value,
     }
     response = client.put(
@@ -191,6 +195,7 @@ def test_update_product(
     _assert_slug_with_suffix(content["slug"], expected_base)
     assert content["category_id"] == data["category_id"]
     assert _decimal(content["price"]) == _decimal(data["price"])
+    assert content["tax_rate"] == data["tax_rate"]
     assert content["status"] == data["status"]
 
 
