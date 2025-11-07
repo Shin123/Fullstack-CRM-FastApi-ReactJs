@@ -17,7 +17,6 @@ def create_random_product(db: Session) -> Product:
         category_id=category.id,
         price=Decimal("9.99"),
         price_origin=Decimal("19.99"),
-        tax_rate=5,
         description="Random product",
         images=[f"https://example.com/{category.id}.png"],
         thumbnail_image=f"https://example.com/{category.id}-thumb.png",

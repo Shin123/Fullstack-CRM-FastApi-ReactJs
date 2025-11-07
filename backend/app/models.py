@@ -168,7 +168,6 @@ class ProductBase(SQLModel):
     description: str | None = Field(default=None, max_length=2048)
     price: Decimal = Field(default=Decimal("0"), ge=0)
     price_origin: Decimal | None = Field(default=None, ge=0)
-    tax_rate: int = Field(default=0, ge=0)
     badge: ProductBadge | None = Field(default=None)
     stock: int = Field(default=0, ge=0)
     status: ProductStatus = Field(default=ProductStatus.draft)
@@ -186,7 +185,6 @@ class ProductUpdate(SQLModel):
     description: str | None = Field(default=None, max_length=2048)
     price: Decimal | None = Field(default=None, ge=0)
     price_origin: Decimal | None = Field(default=None, ge=0)
-    tax_rate: int | None = Field(default=None, ge=0)
     badge: ProductBadge | None = Field(default=None)
     stock: int | None = Field(default=None, ge=0)
     status: ProductStatus | None = Field(default=None)
@@ -229,11 +227,6 @@ class Product(ProductBase, table=True):
         default=None,
         ge=0,
         sa_column=Column(sa.Numeric(10, 2), nullable=True),
-    )
-    tax_rate: int = Field(
-        default=0,
-        ge=0,
-        sa_column=Column(sa.Integer, nullable=False, server_default="0"),
     )
     badge: ProductBadge | None = Field(
         default=None,

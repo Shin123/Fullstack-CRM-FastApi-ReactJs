@@ -66,7 +66,6 @@ def init_db(session: Session) -> None:
                     sku="SKU-DEFAULT",
                     description="Default seeded product",
                     category_id=category.id,
-                    tax_rate=0,
                     price="0",
                     price_origin=None,
                     images=[],
