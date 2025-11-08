@@ -5,6 +5,7 @@ from app.api.routes import (
     customers,
     items,
     login,
+    orders,
     private,
     products,
     users,
@@ -20,6 +21,7 @@ api_router.include_router(categories.router)
 api_router.include_router(products.router)
 api_router.include_router(customers.router)
 api_router.include_router(items.router)
+api_router.include_router(orders.router)
 
 
 if settings.ENVIRONMENT == "local":

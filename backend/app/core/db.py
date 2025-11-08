@@ -7,6 +7,9 @@ from app.models import (
     CategoryCreate,
     Customer,
     CustomerCreate,
+    Order,
+    OrderCreate,
+    OrderItemCreate,
     Product,
     ProductCreate,
     User,
@@ -94,3 +97,23 @@ def init_db(session: Session) -> None:
                 crud.create_customer(session=session, customer_in=customer_in)
             except ValueError:
                 continue
+
+    order_exists = session.exec(select(Order)).first()
+    if not order_exists:
+        customer = session.exec(select(Customer)).first()
+        product = session.exec(select(Product)).first()
+        user = session.exec(select(User)).first()
+        if customer and product:
+            order_in = OrderCreate(
+                customer_id=customer.id,
+                items=[OrderItemCreate(product_id=product.id, quantity=1)],
+                notes="Default seeded order",
+            )
+            try:
+                crud.create_order(
+                    session=session,
+                    order_in=order_in,
+                    created_by=user.id if user else None,
+                )
+            except ValueError:
+                pass
