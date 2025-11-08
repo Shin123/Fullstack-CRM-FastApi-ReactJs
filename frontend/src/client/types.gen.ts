@@ -9,6 +9,59 @@ export type Body_login_login_access_token = {
   client_secret?: string | null
 }
 
+export type CategoriesPublic = {
+  data: Array<CategoryPublic>
+  count: number
+}
+
+export type CategoryCreate = {
+  name: string
+  slug: string
+  description?: string | null
+}
+
+export type CategoryPublic = {
+  name: string
+  slug: string
+  description?: string | null
+  id: string
+  created_at: string
+  updated_at: string
+}
+
+export type CategoryUpdate = {
+  name?: string | null
+  slug?: string | null
+  description?: string | null
+}
+
+export type CustomerCreate = {
+  name: string
+  phone: string
+  email?: string | null
+  address?: string | null
+}
+
+export type CustomerPublic = {
+  name: string
+  phone: string
+  email?: string | null
+  address?: string | null
+  id: string
+}
+
+export type CustomersPublic = {
+  data: Array<CustomerPublic>
+  count: number
+}
+
+export type CustomerUpdate = {
+  name?: string | null
+  phone?: string | null
+  email?: string | null
+  address?: string | null
+}
+
 export type HTTPValidationError = {
   detail?: Array<ValidationError>
 }
@@ -42,6 +95,156 @@ export type Message = {
 export type NewPassword = {
   token: string
   new_password: string
+}
+
+export type OrderCreate = {
+  customer_id: string
+  payment_method?: PaymentMethod
+  payment_status?: PaymentStatus
+  status?: OrderStatus
+  assigned_to?: string | null
+  shipping_address?: string | null
+  billing_address?: string | null
+  notes?: string | null
+  discount_total?: number | string
+  tax_total?: number | string
+  shipping_fee?: number | string
+  items: Array<OrderItemCreate>
+}
+
+export type OrderItemCreate = {
+  product_id: string
+  quantity: number
+}
+
+export type OrderItemPublic = {
+  product_id?: string | null
+  product_name: string
+  sku?: string | null
+  thumbnail_image?: string | null
+  quantity: number
+  unit_price?: string
+  total_price?: string
+  id: string
+  order_id: string
+}
+
+export type OrderPublic = {
+  customer_id: string
+  payment_method?: PaymentMethod
+  payment_status?: PaymentStatus
+  status?: OrderStatus
+  assigned_to?: string | null
+  shipping_address?: string | null
+  billing_address?: string | null
+  notes?: string | null
+  discount_total?: string
+  tax_total?: string
+  shipping_fee?: string
+  id: string
+  order_number: string
+  subtotal: string
+  grand_total: string
+  created_by?: string | null
+  updated_by?: string | null
+  confirmed_at?: string | null
+  paid_at?: string | null
+  fulfilled_at?: string | null
+  cancelled_at?: string | null
+  created_at: string
+  updated_at: string
+  items: Array<OrderItemPublic>
+}
+
+export type OrdersPublic = {
+  data: Array<OrderPublic>
+  count: number
+}
+
+export type OrderStatus =
+  | "draft"
+  | "confirmed"
+  | "paid"
+  | "fulfilled"
+  | "cancelled"
+
+export type OrderUpdate = {
+  payment_method?: PaymentMethod | null
+  payment_status?: PaymentStatus | null
+  status?: OrderStatus | null
+  assigned_to?: string | null
+  shipping_address?: string | null
+  billing_address?: string | null
+  notes?: string | null
+  discount_total?: number | string | null
+  tax_total?: number | string | null
+  shipping_fee?: number | string | null
+}
+
+export type PaymentMethod = "cash" | "cod" | "card" | "bank_transfer"
+
+export type PaymentStatus = "unpaid" | "pending" | "paid" | "refunded"
+
+export type PrivateUserCreate = {
+  email: string
+  password: string
+  full_name: string
+  is_verified?: boolean
+}
+
+export type ProductBadge = "new" | "sale" | "featured"
+
+export type ProductCreate = {
+  name: string
+  sku: string
+  thumbnail_image?: string | null
+  images?: Array<string>
+  description?: string | null
+  price?: number | string
+  price_origin?: number | string | null
+  badge?: ProductBadge | null
+  stock?: number
+  status?: ProductStatus
+  category_id?: string | null
+}
+
+export type ProductPublic = {
+  name: string
+  sku: string
+  thumbnail_image?: string | null
+  images?: Array<string>
+  description?: string | null
+  price?: string
+  price_origin?: string | null
+  badge?: ProductBadge | null
+  stock?: number
+  status?: ProductStatus
+  id: string
+  category_id?: string | null
+  slug: string
+  created_at: string
+  updated_at: string
+}
+
+export type ProductsPublic = {
+  data: Array<ProductPublic>
+  count: number
+}
+
+export type ProductStatus = "draft" | "published" | "archived"
+
+export type ProductUpdate = {
+  name?: string | null
+  sku?: string | null
+  thumbnail_image?: string | null
+  images?: Array<string> | null
+  description?: string | null
+  price?: number | string | null
+  price_origin?: number | string | null
+  badge?: ProductBadge | null
+  stock?: number | null
+  status?: ProductStatus | null
+  category_id?: string | null
 }
 
 export type Token = {
@@ -100,6 +303,70 @@ export type ValidationError = {
   type: string
 }
 
+export type CategoriesReadCategoriesData = {
+  limit?: number
+  skip?: number
+}
+
+export type CategoriesReadCategoriesResponse = CategoriesPublic
+
+export type CategoriesCreateCategoryData = {
+  requestBody: CategoryCreate
+}
+
+export type CategoriesCreateCategoryResponse = CategoryPublic
+
+export type CategoriesReadCategoryData = {
+  categoryId: string
+}
+
+export type CategoriesReadCategoryResponse = CategoryPublic
+
+export type CategoriesUpdateCategoryData = {
+  categoryId: string
+  requestBody: CategoryUpdate
+}
+
+export type CategoriesUpdateCategoryResponse = CategoryPublic
+
+export type CategoriesDeleteCategoryData = {
+  categoryId: string
+}
+
+export type CategoriesDeleteCategoryResponse = Message
+
+export type CustomersReadCustomersData = {
+  limit?: number
+  skip?: number
+}
+
+export type CustomersReadCustomersResponse = CustomersPublic
+
+export type CustomersCreateCustomerData = {
+  requestBody: CustomerCreate
+}
+
+export type CustomersCreateCustomerResponse = CustomerPublic
+
+export type CustomersReadCustomerData = {
+  customerId: string
+}
+
+export type CustomersReadCustomerResponse = CustomerPublic
+
+export type CustomersUpdateCustomerData = {
+  customerId: string
+  requestBody: CustomerUpdate
+}
+
+export type CustomersUpdateCustomerResponse = CustomerPublic
+
+export type CustomersDeleteCustomerData = {
+  customerId: string
+}
+
+export type CustomersDeleteCustomerResponse = Message
+
 export type ItemsReadItemsData = {
   limit?: number
   skip?: number
@@ -157,6 +424,85 @@ export type LoginRecoverPasswordHtmlContentData = {
 }
 
 export type LoginRecoverPasswordHtmlContentResponse = string
+
+export type OrdersReadOrdersData = {
+  assignedTo?: string | null
+  createdBy?: string | null
+  customerId?: string | null
+  fromDate?: string | null
+  limit?: number
+  paymentStatus?: PaymentStatus | null
+  skip?: number
+  status?: OrderStatus | null
+  toDate?: string | null
+}
+
+export type OrdersReadOrdersResponse = OrdersPublic
+
+export type OrdersCreateOrderData = {
+  requestBody: OrderCreate
+}
+
+export type OrdersCreateOrderResponse = OrderPublic
+
+export type OrdersReadOrderData = {
+  orderId: string
+}
+
+export type OrdersReadOrderResponse = OrderPublic
+
+export type OrdersUpdateOrderData = {
+  orderId: string
+  requestBody: OrderUpdate
+}
+
+export type OrdersUpdateOrderResponse = OrderPublic
+
+export type OrdersDeleteOrderData = {
+  orderId: string
+}
+
+export type OrdersDeleteOrderResponse = Message
+
+export type PrivateCreateUserData = {
+  requestBody: PrivateUserCreate
+}
+
+export type PrivateCreateUserResponse = UserPublic
+
+export type ProductsReadProductsData = {
+  categoryId?: string | null
+  limit?: number
+  skip?: number
+  status?: ProductStatus | null
+}
+
+export type ProductsReadProductsResponse = ProductsPublic
+
+export type ProductsCreateProductData = {
+  requestBody: ProductCreate
+}
+
+export type ProductsCreateProductResponse = ProductPublic
+
+export type ProductsReadProductData = {
+  productId: string
+}
+
+export type ProductsReadProductResponse = ProductPublic
+
+export type ProductsUpdateProductData = {
+  productId: string
+  requestBody: ProductUpdate
+}
+
+export type ProductsUpdateProductResponse = ProductPublic
+
+export type ProductsDeleteProductData = {
+  productId: string
+}
+
+export type ProductsDeleteProductResponse = Message
 
 export type UsersReadUsersData = {
   limit?: number
