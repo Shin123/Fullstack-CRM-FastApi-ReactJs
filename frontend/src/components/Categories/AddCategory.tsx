@@ -1,14 +1,22 @@
-import { Button, Input, Textarea, VStack } from '@chakra-ui/react'
+import {
+  Button,
+  DialogActionTrigger,
+  Input,
+  Text,
+  Textarea,
+  VStack,
+} from '@chakra-ui/react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { type SubmitHandler, useForm } from 'react-hook-form'
 import { FaPlus } from 'react-icons/fa'
 
-import { ApiError, CategoriesService, CategoryCreate } from '../../client'
+import type { CategoryCreate } from '@/client'
+import { CategoriesService } from '@/client'
+import type { ApiError } from '@/client/core/ApiError'
 import useCustomToast from '@/hooks/useCustomToast'
 import { handleError } from '@/utils'
 import {
-  DialogActionTrigger,
   DialogBody,
   DialogCloseTrigger,
   DialogContent,
@@ -20,41 +28,42 @@ import {
 } from '../ui/dialog'
 import { Field } from '../ui/field'
 
-interface AddCategoryProps {
-  // In a real app, you might need to pass some props
-}
-
-export const AddCategory = ({}: AddCategoryProps) => {
+const AddCategory = () => {
   const [isOpen, setIsOpen] = useState(false)
   const queryClient = useQueryClient()
-  const { showSuccessToast, showErrorToast } = useCustomToast()
+  const { showSuccessToast } = useCustomToast()
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting, isValid },
     reset,
+    formState: { errors, isValid, isSubmitting },
   } = useForm<CategoryCreate>({
     mode: 'onBlur',
     criteriaMode: 'all',
+    defaultValues: {
+      name: '',
+      slug: '',
+      description: '',
+    },
   })
 
   const mutation = useMutation({
     mutationFn: (data: CategoryCreate) =>
       CategoriesService.createCategory({ requestBody: data }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] })
       showSuccessToast('Category created.')
+      reset()
       setIsOpen(false)
     },
     onError: (err: ApiError) => {
       handleError(err)
     },
     onSettled: () => {
-      reset()
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
     },
   })
 
-  const onSubmit = (data: CategoryCreate) => {
+  const onSubmit: SubmitHandler<CategoryCreate> = (data) => {
     mutation.mutate(data)
   }
 
@@ -67,68 +76,85 @@ export const AddCategory = ({}: AddCategoryProps) => {
     >
       <DialogTrigger asChild>
         <Button my={4}>
-          <FaPlus />
+          <FaPlus fontSize="16px" />
           Add Category
         </Button>
       </DialogTrigger>
-      <DialogContent as="form" onSubmit={handleSubmit(onSubmit)}>
-        <DialogHeader>
-          <DialogTitle>Add Category</DialogTitle>
-        </DialogHeader>
-        <DialogBody>
-          <VStack gap={4}>
-            <Field
-              required
-              label="Name"
-              invalid={!!errors.name}
-              errorText={errors.name?.message}
-            >
-              <Input
-                id="name"
-                {...register('name', {
-                  required: 'Name is required',
-                })}
-              />
-            </Field>
-            <Field
-              required
-              label="Slug"
-              invalid={!!errors.slug}
-              errorText={errors.slug?.message}
-            >
-              <Input
-                id="slug"
-                {...register('slug', {
-                  required: 'Slug is required',
-                })}
-              />
-            </Field>
-            <Field label="Description">
-              <Textarea id="description" {...register('description')} />
-            </Field>
-          </VStack>
-        </DialogBody>
-        <DialogFooter gap={2}>
-          <DialogActionTrigger asChild>
+      <DialogContent>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <DialogHeader>
+            <DialogTitle>Add Category</DialogTitle>
+          </DialogHeader>
+          <DialogBody>
+            <Text mb={4}>Fill in the details to add a new category.</Text>
+            <VStack gap={4}>
+              <Field
+                required
+                label="Name"
+                invalid={!!errors.name}
+                errorText={errors.name?.message}
+              >
+                <Input
+                  id="name"
+                  {...register('name', {
+                    required: 'Name is required',
+                  })}
+                  placeholder="Name"
+                  type="text"
+                />
+              </Field>
+              <Field
+                required
+                label="Slug"
+                invalid={!!errors.slug}
+                errorText={errors.slug?.message}
+              >
+                <Input
+                  id="slug"
+                  {...register('slug', {
+                    required: 'Slug is required',
+                  })}
+                  placeholder="Slug"
+                  type="text"
+                />
+              </Field>
+              <Field
+                label="Description"
+                invalid={!!errors.description}
+                errorText={errors.description?.message}
+              >
+                <Textarea
+                  id="description"
+                  {...register('description')}
+                  placeholder="Description"
+                />
+              </Field>
+            </VStack>
+          </DialogBody>
+          <DialogFooter gap={2}>
+            <DialogActionTrigger asChild>
+              <Button
+                variant="subtle"
+                colorPalette="gray"
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+            </DialogActionTrigger>
             <Button
-              variant="subtle"
-              colorPalette="gray"
-              disabled={isSubmitting}
+              variant="solid"
+              type="submit"
+              disabled={!isValid}
+              loading={isSubmitting}
             >
-              Cancel
+              Save
             </Button>
-          </DialogActionTrigger>
-          <Button
-            variant="solid"
-            type="submit"
-            disabled={!isValid}
-            loading={isSubmitting}
-          >
-            Save
-          </Button>
-        </DialogFooter>
+          </DialogFooter>
+        </form>
         <DialogCloseTrigger />
       </DialogContent>
     </DialogRoot>
   )
 }
+
+export default AddCategory
