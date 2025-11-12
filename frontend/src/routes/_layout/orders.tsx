@@ -120,6 +120,11 @@ const formatDate = (value?: string) => {
   return date.toLocaleString()
 }
 
+const formatStatusLabel = (value?: string | null) => {
+  if (!value) return '—'
+  return value.charAt(0).toUpperCase() + value.slice(1)
+}
+
 export const Route = createFileRoute('/_layout/orders')({
   component: Orders,
   validateSearch: (search) => ordersSearchSchema.parse(search),
@@ -219,7 +224,7 @@ function OrdersTable() {
             <option value="">All statuses</option>
             {ORDER_STATUSES.map((status) => (
               <option key={status} value={status}>
-                {status.charAt(0).toUpperCase() + status.slice(1)}
+                {formatStatusLabel(status)}
               </option>
             ))}
           </NativeSelectField>
@@ -238,7 +243,7 @@ function OrdersTable() {
             <option value="">All payments</option>
             {PAYMENT_STATUSES.map((status) => (
               <option key={status} value={status}>
-                {status.charAt(0).toUpperCase() + status.slice(1)}
+                {formatStatusLabel(status)}
               </option>
             ))}
           </NativeSelectField>
@@ -291,11 +296,11 @@ function OrdersTable() {
                   </Table.Cell>
                   <Table.Cell>{formatCurrency(order.grand_total)}</Table.Cell>
                   <Table.Cell>
-                    <Badge>{order.status ?? '—'}</Badge>
+                    <Badge>{formatStatusLabel(order.status)}</Badge>
                   </Table.Cell>
                   <Table.Cell>
                     <Badge colorPalette="purple">
-                      {order.payment_status ?? '—'}
+                      {formatStatusLabel(order.payment_status)}
                     </Badge>
                   </Table.Cell>
                   <Table.Cell>{order.assigned_to ?? 'Unassigned'}</Table.Cell>

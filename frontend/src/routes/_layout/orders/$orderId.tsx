@@ -36,6 +36,11 @@ const formatDate = (value?: string | null) => {
   return date.toLocaleString()
 }
 
+const formatStatusLabel = (value?: string | null) => {
+  if (!value) return '—'
+  return value.charAt(0).toUpperCase() + value.slice(1)
+}
+
 export const Route = createFileRoute('/_layout/orders/$orderId')({
   component: OrderDetail,
 })
@@ -96,10 +101,12 @@ function OrderDetail() {
 
       <SimpleGrid columns={{ base: 1, md: 3 }} gap={4} mb={8}>
         <SummaryCard title="Status">
-          <Badge>{order.status ?? '—'}</Badge>
+          <Badge>{formatStatusLabel(order.status)}</Badge>
         </SummaryCard>
         <SummaryCard title="Payment">
-          <Badge colorPalette="purple">{order.payment_status ?? '—'}</Badge>
+          <Badge colorPalette="purple">
+            {formatStatusLabel(order.payment_status)}
+          </Badge>
         </SummaryCard>
         <SummaryCard title="Assigned To">
           <Text>{order.assigned_to ?? 'Unassigned'}</Text>
