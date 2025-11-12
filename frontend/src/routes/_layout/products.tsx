@@ -32,6 +32,7 @@ import {
   PaginationPrevTrigger,
   PaginationRoot,
 } from '@/components/ui/pagination.tsx'
+import { useCurrency } from '@/hooks/useCurrency'
 
 const PRODUCT_STATUSES = ['draft', 'published', 'archived'] as const
 
@@ -128,6 +129,8 @@ function ProductsTable() {
     navigate({
       search: (prev: ProductsSearch) => ({ ...prev, categoryId, page: 1 }),
     })
+
+  const { formatCurrency } = useCurrency()
 
   const products = data?.data ?? []
   const count = data?.count ?? 0
@@ -247,7 +250,9 @@ function ProductsTable() {
                   </Table.Cell>
                   <Table.Cell>{product.name}</Table.Cell>
                   <Table.Cell>{product.sku}</Table.Cell>
-                  <Table.Cell>{product.price}</Table.Cell>
+                  <Table.Cell>
+                    {formatCurrency(product.price)}
+                  </Table.Cell>
                   <Table.Cell>{product.stock}</Table.Cell>
                   <Table.Cell>
                     {product.category_id
