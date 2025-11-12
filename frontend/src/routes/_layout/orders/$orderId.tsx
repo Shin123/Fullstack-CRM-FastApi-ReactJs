@@ -18,16 +18,7 @@ import type { CustomerPublic, OrderPublic } from '@/client'
 import { CustomersService, OrdersService } from '@/client'
 import DeleteOrder from '@/components/Orders/DeleteOrder'
 import UpdateOrderStatus from '@/components/Orders/UpdateOrderStatus'
-
-const formatCurrency = (value?: string) => {
-  if (!value) return '—'
-  const amount = Number(value)
-  if (Number.isNaN(amount)) return value
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount)
-}
+import { useCurrency } from '@/hooks/useCurrency'
 
 const formatDate = (value?: string | null) => {
   if (!value) return '—'
@@ -47,6 +38,7 @@ export const Route = createFileRoute('/_layout/orders/$orderId')({
 
 function OrderDetail() {
   const { orderId } = Route.useParams()
+  const { formatCurrency } = useCurrency()
 
   const {
     data: order,
@@ -206,9 +198,9 @@ const SummaryCard = ({
     <Text fontSize="sm" color="gray.500">
       {title}
     </Text>
-    <Text fontWeight="semibold" mt={2}>
+    <Box fontWeight="semibold" mt={2}>
       {children}
-    </Text>
+    </Box>
   </Box>
 )
 

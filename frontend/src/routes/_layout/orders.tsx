@@ -14,6 +14,7 @@ import {
 } from '@chakra-ui/react'
 import { useQuery } from '@tanstack/react-query'
 import {
+  Outlet,
   createFileRoute,
   Link,
   useNavigate,
@@ -39,7 +40,7 @@ import {
   PaginationPrevTrigger,
   PaginationRoot,
 } from '@/components/ui/pagination.tsx'
-import { Outlet } from '@tanstack/react-router'
+import { useCurrency } from '@/hooks/useCurrency'
 
 const ORDER_STATUSES = [
   'draft',
@@ -103,16 +104,6 @@ function getOrdersQueryOptions(search: OrdersSearch) {
   }
 }
 
-const formatCurrency = (value?: string) => {
-  if (!value) return '—'
-  const amount = Number(value)
-  if (Number.isNaN(amount)) return value
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount)
-}
-
 const formatDate = (value?: string) => {
   if (!value) return '—'
   const date = new Date(value)
@@ -134,6 +125,7 @@ function OrdersTable() {
   const navigate = useNavigate({ from: Route.fullPath })
   const search = Route.useSearch()
   const [searchTerm, setSearchTerm] = useState(search.query)
+  const { formatCurrency } = useCurrency()
 
   const updateSearch = useCallback(
     (updates: Partial<OrdersSearch>) => {
@@ -194,6 +186,7 @@ function OrdersTable() {
   if (isLoading) {
     return <PendingOrders />
   }
+  console.log(formatCurrency('12321'))
 
   return (
     <>
