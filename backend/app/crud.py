@@ -14,6 +14,9 @@ from app.models import (
     Customer,
     CustomerCreate,
     CustomerUpdate,
+    InventoryAdjustmentCreate,
+    InventoryTransaction,
+    InventoryTransactionType,
     Item,
     ItemCreate,
     Order,
@@ -33,6 +36,120 @@ from app.models import (
 )
 
 HEX_DIGITS = set("0123456789abcdef")
+INVENTORY_DEDUCT_STATUSES = {
+    OrderStatus.confirmed,
+    OrderStatus.paid,
+    OrderStatus.fulfilled,
+}
+
+
+def _requires_inventory_deduction(status: OrderStatus | None) -> bool:
+    return bool(status and status in INVENTORY_DEDUCT_STATUSES)
+
+
+def _order_has_transactions(
+    *, session: Session, order_id: uuid.UUID, tx_type: InventoryTransactionType
+) -> bool:
+    statement = (
+        select(func.count())
+        .select_from(InventoryTransaction)
+        .where(
+            InventoryTransaction.order_id == order_id,
+            InventoryTransaction.type == tx_type,
+        )
+    )
+    return session.exec(statement).one() > 0
+
+
+def adjust_product_stock(
+    *,
+    session: Session,
+    product_id: uuid.UUID,
+    delta: int,
+    tx_type: InventoryTransactionType,
+    order_id: uuid.UUID | None = None,
+    actor_id: uuid.UUID | None = None,
+    memo: str | None = None,
+    allow_negative: bool = False,
+) -> InventoryTransaction:
+    product_statement = (
+        select(Product).where(Product.id == product_id).with_for_update()
+    )
+    product = session.exec(product_statement).one_or_none()
+    if not product:
+        raise ValueError("Product not found")
+
+    new_stock = (product.stock or 0) + delta
+    if not allow_negative and new_stock < 0:
+        raise ValueError("Insufficient stock")
+    product.stock = new_stock
+
+    transaction = InventoryTransaction(
+        product_id=product_id,
+        order_id=order_id,
+        type=tx_type,
+        quantity=delta,
+        actor_id=actor_id,
+        memo=memo,
+    )
+    session.add(product)
+    session.add(transaction)
+    session.flush()
+    return transaction
+
+
+def deduct_inventory_for_order(
+    *, session: Session, order: Order, actor_id: uuid.UUID | None
+) -> None:
+    if not order.items:
+        return
+    if _order_has_transactions(
+        session=session, order_id=order.id, tx_type=InventoryTransactionType.sale
+    ):
+        return
+
+    for item in order.items:
+        if not item.product_id:
+            continue
+        adjust_product_stock(
+            session=session,
+            product_id=item.product_id,
+            delta=-item.quantity,
+            tx_type=InventoryTransactionType.sale,
+            order_id=order.id,
+            actor_id=actor_id,
+            memo=f"Order {order.order_number}",
+            allow_negative=True,
+        )
+
+
+def restore_inventory_for_order(
+    *, session: Session, order: Order, actor_id: uuid.UUID | None
+) -> None:
+    if not order.items:
+        return
+    if not _order_has_transactions(
+        session=session, order_id=order.id, tx_type=InventoryTransactionType.sale
+    ):
+        return
+    if _order_has_transactions(
+        session=session, order_id=order.id, tx_type=InventoryTransactionType.return_
+    ):
+        return
+
+    for item in order.items:
+        if not item.product_id:
+            continue
+        adjust_product_stock(
+            session=session,
+            product_id=item.product_id,
+            delta=item.quantity,
+            tx_type=InventoryTransactionType.return_,
+            order_id=order.id,
+            actor_id=actor_id,
+            memo=f"Order {order.order_number}",
+            allow_negative=True,
+        )
 
 
 def create_user(*, session: Session, user_create: UserCreate) -> User:
@@ -462,6 +579,11 @@ def create_order(
     )
     order.items = items
     session.add(order)
+    session.flush()
+
+    if _requires_inventory_deduction(order.status):
+        deduct_inventory_for_order(session=session, order=order, actor_id=created_by)
+
     session.commit()
     session.refresh(order)
     return order
@@ -487,6 +609,8 @@ def update_order(
         return db_order
 
     now = datetime.now(timezone.utc)
+    previous_status = db_order.status
+    target_status = update_data.get("status", previous_status)
 
     if "assigned_to" in update_data and update_data["assigned_to"]:
         user = session.get(User, update_data["assigned_to"])
@@ -527,11 +651,78 @@ def update_order(
     db_order.grand_total = grand_total
 
     session.add(db_order)
+    session.flush()
+
+    needs_before = _requires_inventory_deduction(previous_status)
+    needs_after = _requires_inventory_deduction(target_status)
+    if not needs_before and needs_after:
+        deduct_inventory_for_order(session=session, order=db_order, actor_id=updated_by)
+    elif needs_before and not needs_after:
+        restore_inventory_for_order(
+            session=session, order=db_order, actor_id=updated_by
+        )
+
     session.commit()
     session.refresh(db_order)
     return db_order
 
 
 def delete_order(*, session: Session, db_order: Order) -> None:
+    restore_inventory_for_order(session=session, order=db_order, actor_id=None)
     session.delete(db_order)
     session.commit()
+
+
+def create_inventory_adjustment(
+    *,
+    session: Session,
+    adjustment_in: InventoryAdjustmentCreate,
+    actor_id: uuid.UUID | None,
+) -> InventoryTransaction:
+    transaction = adjust_product_stock(
+        session=session,
+        product_id=adjustment_in.product_id,
+        delta=adjustment_in.quantity,
+        tx_type=InventoryTransactionType.adjustment,
+        actor_id=actor_id,
+        memo=adjustment_in.memo,
+        allow_negative=True,
+    )
+    session.commit()
+    session.refresh(transaction)
+    return transaction
+
+
+def get_inventory_transactions(
+    *,
+    session: Session,
+    skip: int = 0,
+    limit: int = 100,
+    product_id: uuid.UUID | None = None,
+    order_id: uuid.UUID | None = None,
+    tx_type: InventoryTransactionType | None = None,
+    from_date: datetime | None = None,
+    to_date: datetime | None = None,
+) -> tuple[list[InventoryTransaction], int]:
+    statement = select(InventoryTransaction)
+    if product_id:
+        statement = statement.where(InventoryTransaction.product_id == product_id)
+    if order_id:
+        statement = statement.where(InventoryTransaction.order_id == order_id)
+    if tx_type:
+        statement = statement.where(InventoryTransaction.type == tx_type)
+    if from_date:
+        statement = statement.where(InventoryTransaction.created_at >= from_date)
+    if to_date:
+        statement = statement.where(InventoryTransaction.created_at <= to_date)
+
+    count_statement = statement.with_only_columns(func.count()).order_by(None)
+    total = session.exec(count_statement).one()
+
+    data_statement = (
+        statement.order_by(InventoryTransaction.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+    )
+    transactions = session.exec(data_statement).all()
+    return transactions, total

@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Annotated, Optional
 
 import sqlalchemy as sa
-from pydantic import EmailStr
+from pydantic import EmailStr, field_validator
 from sqlalchemy import Column
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship, SQLModel
@@ -170,7 +170,7 @@ class ProductBase(SQLModel):
     price: Decimal = Field(default=Decimal("0"), ge=0)
     price_origin: Decimal | None = Field(default=None, ge=0)
     badge: ProductBadge | None = Field(default=None)
-    stock: int = Field(default=0, ge=0)
+    stock: int = Field(default=0)
     status: ProductStatus = Field(default=ProductStatus.draft)
 
 
@@ -187,7 +187,7 @@ class ProductUpdate(SQLModel):
     price: Decimal | None = Field(default=None, ge=0)
     price_origin: Decimal | None = Field(default=None, ge=0)
     badge: ProductBadge | None = Field(default=None)
-    stock: int | None = Field(default=None, ge=0)
+    stock: int | None = Field(default=None)
     status: ProductStatus | None = Field(default=None)
     category_id: uuid.UUID | None = None
 
@@ -320,6 +320,10 @@ class CustomersPublic(SQLModel):
     count: int
 
 
+class AppConfigPublic(SQLModel):
+    default_currency: str
+
+
 class OrderStatus(str, Enum):
     draft = "draft"
     confirmed = "confirmed"
@@ -388,13 +392,17 @@ class OrderBase(SQLModel):
     payment_method: PaymentMethod = Field(
         default=PaymentMethod.cash,
         sa_column=Column(
-            sa.String(length=50), nullable=False, server_default=PaymentMethod.cash.value
+            sa.String(length=50),
+            nullable=False,
+            server_default=PaymentMethod.cash.value,
         ),
     )
     payment_status: PaymentStatus = Field(
         default=PaymentStatus.unpaid,
         sa_column=Column(
-            sa.String(length=50), nullable=False, server_default=PaymentStatus.unpaid.value
+            sa.String(length=50),
+            nullable=False,
+            server_default=PaymentStatus.unpaid.value,
         ),
     )
     status: OrderStatus = Field(
@@ -502,6 +510,73 @@ class OrderPublic(OrderBase):
 class OrdersPublic(SQLModel):
     data: list[OrderPublic]
     count: int
+
+
+class InventoryTransactionType(str, Enum):
+    sale = "sale"
+    return_ = "return"
+    adjustment = "adjustment"
+
+
+class InventoryTransactionBase(SQLModel):
+    product_id: uuid.UUID = Field(
+        foreign_key="product.id",
+        nullable=False,
+        ondelete="CASCADE",
+    )
+    order_id: uuid.UUID | None = Field(
+        default=None,
+        foreign_key="sales_order.id",
+        nullable=True,
+        ondelete="SET NULL",
+    )
+    type: InventoryTransactionType = Field(
+        sa_column=Column(sa.String(length=32), nullable=False)
+    )
+    quantity: int
+    actor_id: uuid.UUID | None = Field(
+        default=None,
+        foreign_key="user.id",
+        nullable=True,
+        ondelete="SET NULL",
+    )
+    memo: str | None = Field(default=None, max_length=1024)
+
+
+class InventoryTransaction(InventoryTransactionBase, table=True):
+    __tablename__ = "inventory_transaction"
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    created_at: datetime = Field(
+        default_factory=utc_now,
+        sa_column=Column(
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("timezone('utc', now())"),
+        ),
+    )
+
+
+class InventoryTransactionPublic(InventoryTransactionBase):
+    id: uuid.UUID
+    created_at: datetime
+
+
+class InventoryTransactionsPublic(SQLModel):
+    data: list[InventoryTransactionPublic]
+    count: int
+
+
+class InventoryAdjustmentCreate(SQLModel):
+    product_id: uuid.UUID
+    quantity: int
+    memo: str | None = Field(default=None, max_length=1024)
+
+    @field_validator("quantity")
+    @classmethod
+    def validate_quantity(cls, value: int) -> int:
+        if value == 0:
+            raise ValueError("Quantity must be non-zero")
+        return value
 
 
 # Generic message

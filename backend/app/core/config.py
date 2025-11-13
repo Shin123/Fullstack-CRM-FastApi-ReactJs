@@ -56,6 +56,7 @@ class Settings(BaseSettings):
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str = ""
     POSTGRES_DB: str = ""
+    DEFAULT_CURRENCY: str = "VND"
 
     @computed_field  # type: ignore[prop-decorator]
     @property
