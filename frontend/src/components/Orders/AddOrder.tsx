@@ -1,4 +1,5 @@
 import {
+  Alert,
   Box,
   Button,
   ButtonGroup,
@@ -198,6 +199,33 @@ const AddOrder = () => {
 
   const totalItems = watch('items')
 
+  const lowStockWarnings = useMemo(() => {
+    return totalItems
+      .map((item) => {
+        const product = selectedProducts.get(item.product_id)
+        if (!product) {
+          return null
+        }
+        const requestedQty = Number(item.quantity) || 0
+        const availableStock = product.stock ?? 0
+        if (requestedQty > availableStock) {
+          return {
+            productId: product.id,
+            name: product.name,
+            requested: requestedQty,
+            stock: availableStock,
+          }
+        }
+        return null
+      })
+      .filter(Boolean) as {
+      productId: string
+      name: string
+      requested: number
+      stock: number
+    }[]
+  }, [selectedProducts, totalItems])
+
   const canSubmit =
     totalItems.every((item) => item.product_id && item.quantity > 0) &&
     watch('customer_id')
@@ -350,66 +378,91 @@ const AddOrder = () => {
                   Order Items
                 </Text>
                 <VStack gap={3} align="stretch">
-                  {fields.map((field, index) => (
-                    <HStack
-                      key={field.id}
-                      gap={3}
-                      align="stretch"
-                      flexWrap="wrap"
-                    >
-                      <Field
-                        required
-                        label="Product"
-                        invalid={!!errors.items?.[index]?.product_id}
-                        errorText={errors.items?.[index]?.product_id?.message}
+                  {fields.map((field, index) => {
+                    const currentItem = totalItems[index]
+                    const product = currentItem?.product_id
+                      ? selectedProducts.get(currentItem.product_id)
+                      : undefined
+                    const availableStock = product?.stock ?? 0
+                    const requestedQty = Number(currentItem?.quantity) || 0
+                    const exceedsStock =
+                      product && requestedQty > availableStock
+
+                    return (
+                      <HStack
+                        key={field.id}
+                        gap={3}
+                        align="stretch"
+                        flexWrap="wrap"
                       >
-                        <NativeSelectRoot width="100%">
-                          <NativeSelectField
-                            {...register(`items.${index}.product_id` as const, {
-                              required: 'Product is required',
-                            })}
-                          >
-                            <option value="">Select product</option>
-                            {products.map((product: ProductPublic) => (
-                              <option key={product.id} value={product.id}>
-                                {product.name} ({product.sku})
-                              </option>
-                            ))}
-                          </NativeSelectField>
-                          <NativeSelectIndicator />
-                        </NativeSelectRoot>
-                      </Field>
-                      <Field
-                        required
-                        label="Qty"
-                        invalid={!!errors.items?.[index]?.quantity}
-                        errorText={errors.items?.[index]?.quantity?.message}
-                      >
-                        <Input
-                          type="number"
-                          min={1}
-                          {...register(`items.${index}.quantity` as const, {
-                            required: 'Quantity is required',
-                            valueAsNumber: true,
-                            min: {
-                              value: 1,
-                              message: 'Minimum quantity is 1',
-                            },
-                          })}
-                        />
-                      </Field>
-                      {fields.length > 1 && (
-                        <IconButton
-                          aria-label="Remove item"
-                          variant="ghost"
-                          colorPalette="red"
-                          onClick={() => remove(index)}
+                        <Field
+                          required
+                          label="Product"
+                          invalid={!!errors.items?.[index]?.product_id}
+                          errorText={errors.items?.[index]?.product_id?.message}
                         >
-                          <FiTrash2 />
-                        </IconButton>
-                      )}
-                    </HStack>
-                  ))}
+                          <NativeSelectRoot width="100%">
+                            <NativeSelectField
+                              {...register(
+                                `items.${index}.product_id` as const,
+                                {
+                                  required: 'Product is required',
+                                }
+                              )}
+                            >
+                              <option value="">Select product</option>
+                              {products.map((product: ProductPublic) => (
+                                <option key={product.id} value={product.id}>
+                                  {product.name} ({product.sku})
+                                </option>
+                              ))}
+                            </NativeSelectField>
+                            <NativeSelectIndicator />
+                          </NativeSelectRoot>
+                        </Field>
+                        <Field
+                          required
+                          label="Qty"
+                          invalid={!!errors.items?.[index]?.quantity}
+                          errorText={errors.items?.[index]?.quantity?.message}
+                        >
+                          <Input
+                            type="number"
+                            min={1}
+                            {...register(`items.${index}.quantity` as const, {
+                              required: 'Quantity is required',
+                              valueAsNumber: true,
+                              min: {
+                                value: 1,
+                                message: 'Minimum quantity is 1',
+                              },
+                            })}
+                          />
+                          {product ? (
+                            <Text fontSize="xs" color="fg.muted" mt={1}>
+                              Stock available: {availableStock}
+                            </Text>
+                          ) : null}
+                          {exceedsStock ? (
+                            <Text fontSize="xs" color="orange.600" mt={1}>
+                              Exceeds stock by {requestedQty - availableStock}.
+                              Order can still be saved and adjusted later.
+                            </Text>
+                          ) : null}
+                        </Field>
+                        {fields.length > 1 && (
+                          <IconButton
+                            aria-label="Remove item"
+                            variant="ghost"
+                            colorPalette="red"
+                            onClick={() => remove(index)}
+                          >
+                            <FiTrash2 />
+                          </IconButton>
+                        )}
+                      </HStack>
+                    )
+                  })}
                   <Button
                     variant="subtle"
                     onClick={() => append({ product_id: '', quantity: 1 })}
@@ -436,6 +489,24 @@ const AddOrder = () => {
                     })}
                   </VStack>
                 </Box>
+              )}
+              {lowStockWarnings.length > 0 && (
+                <Alert.Root status="warning" variant="subtle">
+                  <Alert.Indicator />
+                  <Alert.Content>
+                    <Alert.Description>
+                      <VStack align="stretch" gap={1}>
+                        {lowStockWarnings.map((warning) => (
+                          <Text key={warning.productId} fontSize="sm">
+                            {warning.name}: requested {warning.requested} but
+                            only {warning.stock} in stock. Confirming later will
+                            create negative inventory.
+                          </Text>
+                        ))}
+                      </VStack>
+                    </Alert.Description>
+                  </Alert.Content>
+                </Alert.Root>
               )}
             </VStack>
           </DialogBody>

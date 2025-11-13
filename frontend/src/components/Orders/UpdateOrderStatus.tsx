@@ -12,7 +12,7 @@ import {
   useListCollection,
 } from '@chakra-ui/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { type SubmitHandler, useForm } from 'react-hook-form'
 import { FaExchangeAlt } from 'react-icons/fa'
 
@@ -72,6 +72,15 @@ const UpdateOrderStatus = ({
   const queryClient = useQueryClient()
   const { showSuccessToast } = useCustomToast()
 
+  const defaultValues = useMemo(
+    () => ({
+      status: order.status ?? 'draft',
+      payment_status: order.payment_status ?? 'unpaid',
+      assigned_to: order.assigned_to ?? '',
+    }),
+    [order]
+  )
+
   const {
     register,
     handleSubmit,
@@ -80,11 +89,7 @@ const UpdateOrderStatus = ({
     setValue,
     watch,
   } = useForm<FormValues>({
-    defaultValues: {
-      status: order.status ?? 'draft',
-      payment_status: order.payment_status ?? 'unpaid',
-      assigned_to: order.assigned_to ?? '',
-    },
+    defaultValues,
   })
   const [assigneeInputValue, setAssigneeInputValue] = useState('')
   const assignedValue = watch('assigned_to') ?? ''
@@ -112,17 +117,27 @@ const UpdateOrderStatus = ({
     filter: filterCollection,
     set: setCollection,
   } = useListCollection({ initialItems: userItems, filter: contains })
-  console.log(collection, 'collection')
 
   useEffect(() => {
     setCollection(userItems)
   }, [setCollection, userItems])
 
+  const syncAssigneeInput = useCallback(
+    (value: string | null | undefined) => {
+      if (!value) {
+        setAssigneeInputValue('')
+        return
+      }
+      const matchedLabel =
+        userItems.find((item) => item.value === value)?.label ?? ''
+      setAssigneeInputValue(matchedLabel || value)
+    },
+    [userItems]
+  )
+
   useEffect(() => {
-    const matchedItem =
-      userItems.find((item) => item.value === assignedValue)?.label ?? ''
-    setAssigneeInputValue(matchedItem)
-  }, [assignedValue, userItems])
+    syncAssigneeInput(assignedValue)
+  }, [assignedValue, syncAssigneeInput])
 
   const mutation = useMutation({
     mutationFn: (values: FormValues) => {
@@ -149,7 +164,6 @@ const UpdateOrderStatus = ({
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] })
       queryClient.invalidateQueries({ queryKey: ['order', { id: order.id }] })
-      reset()
     },
   })
 
@@ -157,12 +171,26 @@ const UpdateOrderStatus = ({
     mutation.mutate(values)
   }
 
+  useEffect(() => {
+    if (!isOpen) {
+      reset(defaultValues)
+      syncAssigneeInput(defaultValues.assigned_to)
+    }
+  }, [defaultValues, isOpen, reset, syncAssigneeInput])
+
+  const handleOpenChange = ({ open }: { open: boolean }) => {
+    setIsOpen(open)
+    if (open) {
+      syncAssigneeInput(assignedValue)
+    }
+  }
+
   return (
     <DialogRoot
       size={{ base: 'xs', md: 'sm' }}
       placement="center"
       open={isOpen}
-      onOpenChange={({ open }) => setIsOpen(open)}
+      onOpenChange={handleOpenChange}
     >
       <DialogTrigger asChild>
         <Button variant="ghost">
@@ -222,10 +250,7 @@ const UpdateOrderStatus = ({
                   onValueChange={({ value }) => {
                     const nextValue = value[0] ?? ''
                     setValue('assigned_to', nextValue, { shouldDirty: true })
-                    const matchedItem =
-                      userItems.find((item) => item.value === nextValue)
-                        ?.label ?? ''
-                    setAssigneeInputValue(matchedItem)
+                    syncAssigneeInput(nextValue)
                   }}
                 >
                   <Combobox.Control>

@@ -3,6 +3,7 @@ import { BsThreeDotsVertical } from 'react-icons/bs'
 
 import type { ProductPublic } from '@/client'
 import { MenuContent, MenuRoot, MenuTrigger } from '@/components/ui/menu'
+import AdjustProductStock from './AdjustProductStock'
 import DeleteProduct from './DeleteProduct'
 import EditProduct from './EditProduct'
 
@@ -24,6 +25,7 @@ export const ProductActionsMenu = ({ product }: ProductActionsMenuProps) => {
       </MenuTrigger>
       <MenuContent>
         <EditProduct product={product} />
+        <AdjustProductStock product={product} />
         <DeleteProduct id={product.id} />
       </MenuContent>
     </MenuRoot>
