@@ -25,6 +25,10 @@ import type {
   CustomersUpdateCustomerResponse,
   CustomersDeleteCustomerData,
   CustomersDeleteCustomerResponse,
+  InventoryReadInventoryTransactionsData,
+  InventoryReadInventoryTransactionsResponse,
+  InventoryCreateInventoryAdjustmentData,
+  InventoryCreateInventoryAdjustmentResponse,
   ItemsReadItemsData,
   ItemsReadItemsResponse,
   ItemsCreateItemData,
@@ -339,6 +343,63 @@ export class CustomersService {
       path: {
         customer_id: data.customerId,
       },
+      errors: {
+        422: 'Validation Error',
+      },
+    })
+  }
+}
+
+export class InventoryService {
+  /**
+   * Read Inventory Transactions
+   * @param data The data for the request.
+   * @param data.skip
+   * @param data.limit
+   * @param data.productId
+   * @param data.orderId
+   * @param data.txType
+   * @param data.fromDate
+   * @param data.toDate
+   * @returns InventoryTransactionsPublic Successful Response
+   * @throws ApiError
+   */
+  public static readInventoryTransactions(
+    data: InventoryReadInventoryTransactionsData = {}
+  ): CancelablePromise<InventoryReadInventoryTransactionsResponse> {
+    return __request(OpenAPI, {
+      method: 'GET',
+      url: '/api/v1/inventory/transactions',
+      query: {
+        skip: data.skip,
+        limit: data.limit,
+        product_id: data.productId,
+        order_id: data.orderId,
+        tx_type: data.txType,
+        from_date: data.fromDate,
+        to_date: data.toDate,
+      },
+      errors: {
+        422: 'Validation Error',
+      },
+    })
+  }
+
+  /**
+   * Create Inventory Adjustment
+   * @param data The data for the request.
+   * @param data.requestBody
+   * @returns InventoryTransactionPublic Successful Response
+   * @throws ApiError
+   */
+  public static createInventoryAdjustment(
+    data: InventoryCreateInventoryAdjustmentData
+  ): CancelablePromise<InventoryCreateInventoryAdjustmentResponse> {
+    return __request(OpenAPI, {
+      method: 'POST',
+      url: '/api/v1/inventory/adjustments',
+      body: data.requestBody,
+      mediaType: 'application/json',
       errors: {
         422: 'Validation Error',
       },

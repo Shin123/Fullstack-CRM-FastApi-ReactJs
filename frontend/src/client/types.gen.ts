@@ -70,6 +70,30 @@ export type HTTPValidationError = {
   detail?: Array<ValidationError>
 }
 
+export type InventoryAdjustmentCreate = {
+  product_id: string
+  quantity: number
+  memo?: string | null
+}
+
+export type InventoryTransactionPublic = {
+  product_id: string
+  order_id?: string | null
+  type: InventoryTransactionType
+  quantity: number
+  actor_id?: string | null
+  memo?: string | null
+  id: string
+  created_at: string
+}
+
+export type InventoryTransactionsPublic = {
+  data: Array<InventoryTransactionPublic>
+  count: number
+}
+
+export type InventoryTransactionType = 'sale' | 'return' | 'adjustment'
+
 export type ItemCreate = {
   title: string
   description?: string | null
@@ -372,6 +396,26 @@ export type CustomersDeleteCustomerData = {
 }
 
 export type CustomersDeleteCustomerResponse = Message
+
+export type InventoryReadInventoryTransactionsData = {
+  fromDate?: string | null
+  limit?: number
+  orderId?: string | null
+  productId?: string | null
+  skip?: number
+  toDate?: string | null
+  txType?: InventoryTransactionType | null
+}
+
+export type InventoryReadInventoryTransactionsResponse =
+  InventoryTransactionsPublic
+
+export type InventoryCreateInventoryAdjustmentData = {
+  requestBody: InventoryAdjustmentCreate
+}
+
+export type InventoryCreateInventoryAdjustmentResponse =
+  InventoryTransactionPublic
 
 export type ItemsReadItemsData = {
   limit?: number

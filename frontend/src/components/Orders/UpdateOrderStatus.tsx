@@ -1,16 +1,18 @@
 import {
   Button,
   ButtonGroup,
+  Combobox,
   DialogActionTrigger,
-  Input,
   NativeSelectField,
   NativeSelectIndicator,
   NativeSelectRoot,
   Text,
   VStack,
+  useFilter,
+  useListCollection,
 } from '@chakra-ui/react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useMemo, useState } from 'react'
 import { type SubmitHandler, useForm } from 'react-hook-form'
 import { FaExchangeAlt } from 'react-icons/fa'
 
@@ -21,7 +23,7 @@ import type {
   PaymentStatus,
   OrderStatus,
 } from '@/client'
-import { OrdersService } from '@/client'
+import { OrdersService, UsersService } from '@/client'
 import {
   DialogBody,
   DialogCloseTrigger,
@@ -75,6 +77,8 @@ const UpdateOrderStatus = ({
     handleSubmit,
     formState: { isSubmitting },
     reset,
+    setValue,
+    watch,
   } = useForm<FormValues>({
     defaultValues: {
       status: order.status ?? 'draft',
@@ -82,6 +86,43 @@ const UpdateOrderStatus = ({
       assigned_to: order.assigned_to ?? '',
     },
   })
+  const [assigneeInputValue, setAssigneeInputValue] = useState('')
+  const assignedValue = watch('assigned_to') ?? ''
+
+  const { data: usersData } = useQuery({
+    queryKey: ['users', 'assignees'],
+    queryFn: () => UsersService.readUsers({ limit: 100 }),
+    staleTime: 5 * 60 * 1000,
+  })
+
+  const userItems = useMemo(
+    () =>
+      usersData?.data?.map((user) => {
+        const primary = user.full_name || user.email || 'Unnamed User'
+        const label = user.email ? `${primary} (${user.email})` : primary
+        return { id: user.id, label, value: user.id }
+      }) ?? [],
+    [usersData?.data]
+  )
+
+  const { contains } = useFilter({ sensitivity: 'base' })
+
+  const {
+    collection,
+    filter: filterCollection,
+    set: setCollection,
+  } = useListCollection({ initialItems: userItems, filter: contains })
+  console.log(collection, 'collection')
+
+  useEffect(() => {
+    setCollection(userItems)
+  }, [setCollection, userItems])
+
+  useEffect(() => {
+    const matchedItem =
+      userItems.find((item) => item.value === assignedValue)?.label ?? ''
+    setAssigneeInputValue(matchedItem)
+  }, [assignedValue, userItems])
 
   const mutation = useMutation({
     mutationFn: (values: FormValues) => {
@@ -165,11 +206,48 @@ const UpdateOrderStatus = ({
                 </NativeSelectRoot>
               </Field>
               <Field label="Assigned To">
-                <Input
-                  id="assigned_to"
-                  placeholder="user@example.com"
-                  {...register('assigned_to')}
-                />
+                <Combobox.Root
+                  width="100%"
+                  positioning={{ sameWidth: true }}
+                  value={assignedValue ? [assignedValue] : []}
+                  inputValue={assigneeInputValue}
+                  collection={collection}
+                  onInputValueChange={({ inputValue }) => {
+                    setAssigneeInputValue(inputValue)
+                    filterCollection(inputValue)
+                    if (!inputValue) {
+                      setValue('assigned_to', '', { shouldDirty: true })
+                    }
+                  }}
+                  onValueChange={({ value }) => {
+                    const nextValue = value[0] ?? ''
+                    setValue('assigned_to', nextValue, { shouldDirty: true })
+                    const matchedItem =
+                      userItems.find((item) => item.value === nextValue)
+                        ?.label ?? ''
+                    setAssigneeInputValue(matchedItem)
+                  }}
+                >
+                  <Combobox.Control>
+                    <Combobox.Input placeholder="Select assignee" />
+                    <Combobox.IndicatorGroup>
+                      <Combobox.ClearTrigger />
+                      <Combobox.Trigger />
+                    </Combobox.IndicatorGroup>
+                  </Combobox.Control>
+                  <Combobox.Positioner>
+                    <Combobox.Content zIndex="popover">
+                      <Combobox.Empty>No users found</Combobox.Empty>
+                      {collection.items.map((item) => (
+                        <Combobox.Item item={item} key={item.value}>
+                          {item.label}
+                          <Combobox.ItemIndicator />
+                        </Combobox.Item>
+                      ))}
+                    </Combobox.Content>
+                  </Combobox.Positioner>
+                </Combobox.Root>
+                <input type="hidden" {...register('assigned_to')} />
               </Field>
             </VStack>
           </DialogBody>
