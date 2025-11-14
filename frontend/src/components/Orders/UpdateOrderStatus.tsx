@@ -19,9 +19,9 @@ import { FaExchangeAlt } from 'react-icons/fa'
 import type {
   ApiError,
   OrderPublic,
+  OrderStatus,
   OrderUpdate,
   PaymentStatus,
-  OrderStatus,
 } from '@/client'
 import { OrdersService, UsersService } from '@/client'
 import {
@@ -35,6 +35,11 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Field } from '@/components/ui/field'
+import {
+  getAllowedStatusTransitions,
+  hasStatusTransitions,
+  normalizeOrderStatus,
+} from '@/constants/orderPermissions'
 import useCustomToast from '@/hooks/useCustomToast'
 import { handleError } from '@/utils'
 
@@ -68,17 +73,20 @@ const UpdateOrderStatus = ({
   order,
   triggerLabel = 'Update Order',
 }: UpdateOrderStatusProps) => {
+  const normalizedStatus = normalizeOrderStatus(order.status)
+  const allowedStatuses = getAllowedStatusTransitions(order.status)
+  const statusLocked = !hasStatusTransitions(order.status)
   const [isOpen, setIsOpen] = useState(false)
   const queryClient = useQueryClient()
   const { showSuccessToast } = useCustomToast()
 
   const defaultValues = useMemo(
     () => ({
-      status: order.status ?? 'draft',
+      status: normalizedStatus,
       payment_status: order.payment_status ?? 'unpaid',
       assigned_to: order.assigned_to ?? '',
     }),
-    [order]
+    [normalizedStatus, order.assigned_to, order.payment_status]
   )
 
   const {
@@ -141,8 +149,12 @@ const UpdateOrderStatus = ({
 
   const mutation = useMutation({
     mutationFn: (values: FormValues) => {
+      const nextStatus =
+        values.status && allowedStatuses.includes(values.status)
+          ? values.status
+          : normalizedStatus
       const payload: OrderUpdate = {
-        status: values.status || null,
+        status: nextStatus || null,
         payment_status: values.payment_status || null,
         assigned_to:
           values.assigned_to && values.assigned_to.trim() !== ''
@@ -179,6 +191,7 @@ const UpdateOrderStatus = ({
   }, [defaultValues, isOpen, reset, syncAssigneeInput])
 
   const handleOpenChange = ({ open }: { open: boolean }) => {
+    if (statusLocked) return
     setIsOpen(open)
     if (open) {
       syncAssigneeInput(assignedValue)
@@ -193,7 +206,11 @@ const UpdateOrderStatus = ({
       onOpenChange={handleOpenChange}
     >
       <DialogTrigger asChild>
-        <Button variant="ghost">
+        <Button
+          variant="ghost"
+          disabled={statusLocked}
+          title={statusLocked ? 'Status changes not allowed' : undefined}
+        >
           <FaExchangeAlt fontSize="16px" />
           {triggerLabel}
         </Button>
@@ -209,11 +226,18 @@ const UpdateOrderStatus = ({
               <Field label="Order Status">
                 <NativeSelectRoot width="100%">
                   <NativeSelectField id="status" {...register('status')}>
-                    {ORDER_STATUSES.map((status) => (
-                      <option key={status} value={status}>
-                        {status.charAt(0).toUpperCase() + status.slice(1)}
-                      </option>
-                    ))}
+                    {ORDER_STATUSES.map((status) => {
+                      const disabledOption = !allowedStatuses.includes(status)
+                      return (
+                        <option
+                          key={status}
+                          value={status}
+                          disabled={disabledOption}
+                        >
+                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                        </option>
+                      )
+                    })}
                   </NativeSelectField>
                   <NativeSelectIndicator />
                 </NativeSelectRoot>

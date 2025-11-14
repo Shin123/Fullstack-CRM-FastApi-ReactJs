@@ -22,9 +22,10 @@ import { handleError } from '@/utils'
 
 interface DeleteOrderProps {
   orderId: string
+  isDisabled?: boolean
 }
 
-const DeleteOrder = ({ orderId }: DeleteOrderProps) => {
+const DeleteOrder = ({ orderId, isDisabled = false }: DeleteOrderProps) => {
   const [isOpen, setIsOpen] = useState(false)
   const queryClient = useQueryClient()
   const { showSuccessToast } = useCustomToast()
@@ -56,10 +57,19 @@ const DeleteOrder = ({ orderId }: DeleteOrderProps) => {
       placement="center"
       role="alertdialog"
       open={isOpen}
-      onOpenChange={({ open }) => setIsOpen(open)}
+      onOpenChange={({ open }) => {
+        if (isDisabled) return
+        setIsOpen(open)
+      }}
     >
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" colorPalette="red">
+        <Button
+          variant="ghost"
+          size="sm"
+          colorPalette="red"
+          disabled={isDisabled}
+          title={isDisabled ? 'Only draft orders can be deleted' : undefined}
+        >
           <FiTrash2 fontSize="16px" />
           Delete Order
         </Button>

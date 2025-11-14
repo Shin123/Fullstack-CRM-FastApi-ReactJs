@@ -235,7 +235,12 @@ const AddOrder = () => {
       size={{ base: 'xs', md: 'lg' }}
       placement="center"
       open={isOpen}
-      onOpenChange={({ open }) => setIsOpen(open)}
+      onOpenChange={({ open }) => {
+        if (open === false) {
+          reset()
+        }
+        setIsOpen(open)
+      }}
     >
       <DialogTrigger asChild>
         <Button my={4}>

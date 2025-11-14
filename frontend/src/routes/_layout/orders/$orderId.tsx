@@ -17,7 +17,10 @@ import { createFileRoute } from '@tanstack/react-router'
 import type { CustomerPublic, OrderPublic } from '@/client'
 import { CustomersService, OrdersService } from '@/client'
 import DeleteOrder from '@/components/Orders/DeleteOrder'
+import EditOrderAddresses from '@/components/Orders/EditOrderAddresses'
+import EditOrderNotes from '@/components/Orders/EditOrderNotes'
 import UpdateOrderStatus from '@/components/Orders/UpdateOrderStatus'
+import { canDeleteOrder } from '@/constants/orderPermissions'
 import { useCurrency } from '@/hooks/useCurrency'
 
 const formatDate = (value?: string | null) => {
@@ -76,6 +79,8 @@ function OrderDetail() {
     )
   }
 
+  const canDelete = canDeleteOrder(order.status)
+
   return (
     <Container maxW="full" py={12}>
       <Flex align="center" justify="space-between" mb={6} gap={4}>
@@ -87,7 +92,7 @@ function OrderDetail() {
         </Box>
         <Flex gap={2} wrap="wrap">
           <UpdateOrderStatus order={order} triggerLabel="Update Order" />
-          <DeleteOrder orderId={order.id} />
+          <DeleteOrder orderId={order.id} isDisabled={!canDelete} />
         </Flex>
       </Flex>
 
@@ -106,15 +111,26 @@ function OrderDetail() {
       </SimpleGrid>
 
       <Stack gap={6}>
-        <DetailSection title="Customer">
-          <Text fontWeight="semibold">
-            {customer?.name ?? order.customer_id}
-          </Text>
-          <Text color="gray.600">{customer?.email ?? 'No email'}</Text>
-          <Text color="gray.600">{customer?.phone ?? 'No phone'}</Text>
-          <Text color="gray.600">
-            {order.shipping_address ?? 'No shipping address'}
-          </Text>
+        <DetailSection
+          title="Customer"
+          action={<EditOrderAddresses order={order} />}
+        >
+          <Stack gap={1}>
+            <Text fontWeight="semibold">
+              Name: {customer?.name ?? order.customer_id}
+            </Text>
+            <Text color="gray.600">Email: {customer?.email ?? 'No email'}</Text>
+            <Text color="gray.600">
+              Mobile: {customer?.phone ?? 'No phone'}
+            </Text>
+            <Text color="gray.600">
+              Shipping Address:{' '}
+              {order.shipping_address ?? 'No shipping address'}
+            </Text>
+            <Text color="gray.600">
+              Billing Address: {order.billing_address ?? 'No billing address'}
+            </Text>
+          </Stack>
         </DetailSection>
 
         <DetailSection title="Totals">
@@ -177,11 +193,9 @@ function OrderDetail() {
           />
         </DetailSection>
 
-        {order.notes && (
-          <DetailSection title="Notes">
-            <Text>{order.notes}</Text>
-          </DetailSection>
-        )}
+        <DetailSection title="Notes" action={<EditOrderNotes order={order} />}>
+          <Text>{order.notes ?? 'No notes yet.'}</Text>
+        </DetailSection>
       </Stack>
     </Container>
   )
@@ -207,14 +221,17 @@ const SummaryCard = ({
 const DetailSection = ({
   title,
   children,
+  action,
 }: {
   title: string
   children: React.ReactNode
+  action?: React.ReactNode
 }) => (
   <Box borderWidth="1px" borderRadius="md" p={4}>
-    <Text fontWeight="semibold" mb={2}>
-      {title}
-    </Text>
+    <Flex justify="space-between" align="center" mb={2}>
+      <Text fontWeight="semibold">{title}</Text>
+      {action}
+    </Flex>
     <Separator mb={4} />
     <Stack gap={2}>{children}</Stack>
   </Box>
