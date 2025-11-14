@@ -1,5 +1,6 @@
 import {
   Badge,
+  Button,
   Container,
   EmptyState,
   Flex,
@@ -14,7 +15,12 @@ import {
 } from '@chakra-ui/react'
 import { useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import {
+  Link as RouterLink,
+  createFileRoute,
+  useNavigate,
+  useRouterState,
+} from '@tanstack/react-router'
 import { FiSearch } from 'react-icons/fi'
 import { z } from 'zod'
 
@@ -33,6 +39,7 @@ import {
   PaginationRoot,
 } from '@/components/ui/pagination.tsx'
 import { useCurrency } from '@/hooks/useCurrency'
+import { Outlet } from '@tanstack/react-router'
 
 const PRODUCT_STATUSES = ['draft', 'published', 'archived'] as const
 
@@ -248,11 +255,17 @@ function ProductsTable() {
                       objectFit="cover"
                     />
                   </Table.Cell>
-                  <Table.Cell>{product.name}</Table.Cell>
-                  <Table.Cell>{product.sku}</Table.Cell>
                   <Table.Cell>
-                    {formatCurrency(product.price)}
+                    <RouterLink
+                      to="/products/$productId"
+                      params={{ productId: product.id }}
+                      style={{ fontWeight: 600 }}
+                    >
+                      {product.name}
+                    </RouterLink>
                   </Table.Cell>
+                  <Table.Cell>{product.sku}</Table.Cell>
+                  <Table.Cell>{formatCurrency(product.price)}</Table.Cell>
                   <Table.Cell>{product.stock}</Table.Cell>
                   <Table.Cell>
                     {product.category_id
@@ -289,13 +302,36 @@ function ProductsTable() {
 }
 
 function Products() {
+  const location = useRouterState({
+    select: (state) => state.location,
+  })
+  const isDetailRoute =
+    location.pathname !== '/products' &&
+    location.pathname.startsWith('/products')
   return (
-    <Container maxW="full">
-      <Heading size="lg" pt={12}>
-        Products Management
-      </Heading>
-      <AddProduct />
-      <ProductsTable />
-    </Container>
+    <>
+      {!isDetailRoute && (
+        <Container maxW="full">
+          <Flex
+            align="center"
+            justify="space-between"
+            pt={12}
+            pb={4}
+            gap={4}
+            wrap="wrap"
+          >
+            <Heading size="lg">Products Management</Heading>
+            <Button asChild variant="outline">
+              <RouterLink to="/products/adjust-stock">
+                View Stock History
+              </RouterLink>
+            </Button>
+          </Flex>
+          <AddProduct />
+          <ProductsTable />
+        </Container>
+      )}
+      <Outlet />
+    </>
   )
 }

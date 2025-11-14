@@ -24,6 +24,8 @@ import { Route as LayoutItemsImport } from './routes/_layout/items'
 import { Route as LayoutCustomersImport } from './routes/_layout/customers'
 import { Route as LayoutCategoriesImport } from './routes/_layout/categories'
 import { Route as LayoutAdminImport } from './routes/_layout/admin'
+import { Route as LayoutProductsAdjustStockImport } from './routes/_layout/products/adjust-stock'
+import { Route as LayoutProductsProductIdImport } from './routes/_layout/products/$productId'
 import { Route as LayoutOrdersOrderIdImport } from './routes/_layout/orders/$orderId'
 
 // Create/Update Routes
@@ -93,6 +95,16 @@ const LayoutAdminRoute = LayoutAdminImport.update({
   getParentRoute: () => LayoutRoute,
 } as any)
 
+const LayoutProductsAdjustStockRoute = LayoutProductsAdjustStockImport.update({
+  path: '/adjust-stock',
+  getParentRoute: () => LayoutProductsRoute,
+} as any)
+
+const LayoutProductsProductIdRoute = LayoutProductsProductIdImport.update({
+  path: '/$productId',
+  getParentRoute: () => LayoutProductsRoute,
+} as any)
+
 const LayoutOrdersOrderIdRoute = LayoutOrdersOrderIdImport.update({
   path: '/$orderId',
   getParentRoute: () => LayoutOrdersRoute,
@@ -158,6 +170,14 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutOrdersOrderIdImport
       parentRoute: typeof LayoutOrdersImport
     }
+    '/_layout/products/$productId': {
+      preLoaderRoute: typeof LayoutProductsProductIdImport
+      parentRoute: typeof LayoutProductsImport
+    }
+    '/_layout/products/adjust-stock': {
+      preLoaderRoute: typeof LayoutProductsAdjustStockImport
+      parentRoute: typeof LayoutProductsImport
+    }
   }
 }
 
@@ -170,7 +190,10 @@ export const routeTree = rootRoute.addChildren([
     LayoutCustomersRoute,
     LayoutItemsRoute,
     LayoutOrdersRoute.addChildren([LayoutOrdersOrderIdRoute]),
-    LayoutProductsRoute,
+    LayoutProductsRoute.addChildren([
+      LayoutProductsProductIdRoute,
+      LayoutProductsAdjustStockRoute,
+    ]),
     LayoutSettingsRoute,
     LayoutIndexRoute,
   ]),

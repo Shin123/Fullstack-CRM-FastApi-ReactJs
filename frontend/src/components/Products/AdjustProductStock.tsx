@@ -76,8 +76,7 @@ const AdjustProductStock = ({ product }: AdjustProductStockProps) => {
     enabled: isOpen,
   })
 
-  const transactions: InventoryTransactionPublic[] =
-    transactionData?.data ?? []
+  const transactions: InventoryTransactionPublic[] = transactionData?.data ?? []
 
   const mutation = useMutation({
     mutationFn: (values: AdjustmentFormValues) => {
@@ -197,11 +196,15 @@ const AdjustProductStock = ({ product }: AdjustProductStockProps) => {
                     <Table.Body>
                       {transactions.map((tx) => (
                         <Table.Row key={tx.id}>
-                          <Table.Cell>{formatDateTime(tx.created_at)}</Table.Cell>
+                          <Table.Cell>
+                            {formatDateTime(tx.created_at)}
+                          </Table.Cell>
                           <Table.Cell textTransform="capitalize">
                             {tx.type}
                           </Table.Cell>
-                          <Table.Cell color={tx.quantity < 0 ? 'red.500' : 'green.600'}>
+                          <Table.Cell
+                            color={tx.quantity < 0 ? 'red.500' : 'green.600'}
+                          >
                             {tx.quantity}
                           </Table.Cell>
                           <Table.Cell>{tx.memo || '—'}</Table.Cell>
@@ -216,7 +219,11 @@ const AdjustProductStock = ({ product }: AdjustProductStockProps) => {
           <DialogFooter>
             <ButtonGroup>
               <DialogActionTrigger asChild>
-                <Button variant="subtle" colorPalette="gray" disabled={isSubmitting}>
+                <Button
+                  variant="subtle"
+                  colorPalette="gray"
+                  disabled={isSubmitting}
+                >
                   Cancel
                 </Button>
               </DialogActionTrigger>
