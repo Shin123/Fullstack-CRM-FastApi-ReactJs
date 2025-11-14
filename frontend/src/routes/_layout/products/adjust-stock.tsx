@@ -1,5 +1,4 @@
 import {
-  Badge,
   Button,
   Container,
   Flex,
@@ -259,7 +258,7 @@ function InventoryTransactionsPage() {
                         <RouterLink
                           to="/products/$productId"
                           params={{ productId: tx.product_id }}
-                          style={{ fontWeight: 600 }}
+                          style={{ fontWeight: 600, color: '#14b8a6' }}
                         >
                           {productMap.get(tx.product_id) || tx.product_id}
                         </RouterLink>
@@ -285,6 +284,7 @@ function InventoryTransactionsPage() {
                         <RouterLink
                           to="/orders/$orderId"
                           params={{ orderId: tx.order_id }}
+                          style={{ color: '#14b8a6' }}
                         >
                           {tx.order_id}
                         </RouterLink>

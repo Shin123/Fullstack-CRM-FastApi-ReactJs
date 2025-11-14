@@ -1,5 +1,6 @@
 import secrets
 import warnings
+from pathlib import Path
 from typing import Annotated, Any, Literal
 
 from pydantic import (
@@ -57,6 +58,7 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = ""
     POSTGRES_DB: str = ""
     DEFAULT_CURRENCY: str = "VND"
+    MEDIA_ROOT: str = "../media"
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -95,6 +97,12 @@ class Settings(BaseSettings):
     EMAIL_TEST_USER: EmailStr = "test@example.com"
     FIRST_SUPERUSER: EmailStr
     FIRST_SUPERUSER_PASSWORD: str
+    @computed_field
+    @property
+    def media_directory(self) -> Path:
+        path = Path(self.MEDIA_ROOT).resolve()
+        path.mkdir(parents=True, exist_ok=True)
+        return path
 
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":

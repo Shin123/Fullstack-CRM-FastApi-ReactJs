@@ -13,6 +13,10 @@ export type Body_login_login_access_token = {
   client_secret?: string | null
 }
 
+export type Body_media_upload_media = {
+  file: Blob | File
+}
+
 export type CategoriesPublic = {
   data: Array<CategoryPublic>
   count: number
@@ -114,6 +118,24 @@ export type ItemsPublic = {
 export type ItemUpdate = {
   title?: string | null
   description?: string | null
+}
+
+export type MediaList = {
+  data: Array<MediaPublic>
+  count: number
+}
+
+export type MediaPublic = {
+  file_name: string
+  file_url: string
+  mime_type: string
+  file_size: number
+  width?: number | null
+  height?: number | null
+  original_name?: string | null
+  id: string
+  created_at: string
+  created_by?: string | null
 }
 
 export type Message = {
@@ -474,6 +496,26 @@ export type LoginRecoverPasswordHtmlContentData = {
 }
 
 export type LoginRecoverPasswordHtmlContentResponse = string
+
+export type MediaListMediaData = {
+  limit?: number
+  query?: string | null
+  skip?: number
+}
+
+export type MediaListMediaResponse = MediaList
+
+export type MediaUploadMediaData = {
+  formData: Body_media_upload_media
+}
+
+export type MediaUploadMediaResponse = MediaPublic
+
+export type MediaDeleteMediaData = {
+  mediaId: string
+}
+
+export type MediaDeleteMediaResponse = void
 
 export type OrdersReadOrdersData = {
   assignedTo?: string | null

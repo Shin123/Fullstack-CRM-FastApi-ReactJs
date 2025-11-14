@@ -11,6 +11,7 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link as RouterLink } from '@tanstack/react-router'
 import { useState } from 'react'
 import { type SubmitHandler, useForm } from 'react-hook-form'
 import { FaPlus } from 'react-icons/fa'
@@ -167,7 +168,14 @@ const AddProduct = () => {
                   {...register('sku', { required: 'SKU is required' })}
                 />
               </Field>
-              <Field label="Thumbnail URL">
+              <Field
+                label="Thumbnail URL"
+                helperText={
+                  <RouterLink to="/media" style={{ fontSize: '0.85em' }}>
+                    Upload or copy URLs via the media library
+                  </RouterLink>
+                }
+              >
                 <Input
                   id="thumbnail_image"
                   placeholder="https://example.com/image.png"

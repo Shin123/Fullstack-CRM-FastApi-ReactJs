@@ -28,6 +28,7 @@ import {
   CategoriesService,
   type ProductStatus,
   ProductsService,
+  OpenAPI,
 } from '@/client'
 import AddProduct from '@/components/Products/AddProduct'
 import { ProductActionsMenu } from '@/components/Products/ProductActionsMenu'
@@ -139,6 +140,18 @@ function ProductsTable() {
 
   const { formatCurrency } = useCurrency()
 
+  const resolveMediaUrl = (url?: string | null) => {
+    if (!url) return undefined
+    const base = OpenAPI.BASE || ''
+    try {
+      return url.startsWith('http')
+        ? url
+        : new URL(url, base || window.location.origin).href
+    } catch {
+      return url
+    }
+  }
+
   const products = data?.data ?? []
   const count = data?.count ?? 0
   const categories = categoriesData?.data ?? []
@@ -247,7 +260,7 @@ function ProductsTable() {
                   <Table.Cell>
                     <Image
                       src={
-                        product.thumbnail_image ||
+                        resolveMediaUrl(product.thumbnail_image) ||
                         '/assets/images/placeholder.png'
                       }
                       alt={product.name}
@@ -261,7 +274,9 @@ function ProductsTable() {
                       params={{ productId: product.id }}
                       style={{ fontWeight: 600 }}
                     >
-                      {product.name}
+                      <Button variant="plain" fontWeight="semibold">
+                        {product.name}
+                      </Button>
                     </RouterLink>
                   </Table.Cell>
                   <Table.Cell>{product.sku}</Table.Cell>
@@ -321,11 +336,16 @@ function Products() {
             wrap="wrap"
           >
             <Heading size="lg">Products Management</Heading>
-            <Button asChild variant="outline">
-              <RouterLink to="/products/adjust-stock">
-                View Stock History
-              </RouterLink>
-            </Button>
+            <Flex gap={2} wrap="wrap">
+              <Button asChild variant="outline">
+                <RouterLink to="/media">Media Library</RouterLink>
+              </Button>
+              <Button asChild variant="outline">
+                <RouterLink to="/products/adjust-stock">
+                  View Stock History
+                </RouterLink>
+              </Button>
+            </Flex>
           </Flex>
           <AddProduct />
           <ProductsTable />

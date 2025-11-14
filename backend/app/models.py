@@ -512,6 +512,44 @@ class OrdersPublic(SQLModel):
     count: int
 
 
+class MediaBase(SQLModel):
+    file_name: str = Field(max_length=512)
+    file_url: str = Field(max_length=1024)
+    mime_type: str = Field(max_length=128)
+    file_size: int = Field(ge=0)
+    width: int | None = Field(default=None, ge=0)
+    height: int | None = Field(default=None, ge=0)
+    original_name: str | None = Field(default=None, max_length=512)
+
+
+class MediaCreate(MediaBase):
+    created_by: uuid.UUID | None = None
+    file_path: str = Field(max_length=1024)
+
+
+class Media(MediaBase, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    file_path: str = Field(max_length=1024)
+    created_by: uuid.UUID | None = Field(
+        default=None,
+        foreign_key="user.id",
+        nullable=True,
+        ondelete="SET NULL",
+    )
+    created_at: datetime = Field(default_factory=utc_now, nullable=False)
+
+
+class MediaPublic(MediaBase):
+    id: uuid.UUID
+    created_at: datetime
+    created_by: uuid.UUID | None = None
+
+
+class MediaList(SQLModel):
+    data: list[MediaPublic]
+    count: int
+
+
 class InventoryTransactionType(str, Enum):
     sale = "sale"
     return_ = "return"

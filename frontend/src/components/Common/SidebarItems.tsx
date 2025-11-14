@@ -4,6 +4,7 @@ import { Link as RouterLink } from '@tanstack/react-router'
 import {
   FiBriefcase,
   FiHome,
+  FiImage,
   FiSettings,
   FiShoppingCart,
   FiTag,
@@ -21,6 +22,7 @@ const mainItems = [
 const storeItems = [
   { icon: FiShoppingCart, title: 'Orders', path: '/orders' },
   { icon: FiTag, title: 'Products', path: '/products' },
+  { icon: FiImage, title: 'Media', path: '/media' },
   { icon: FiBriefcase, title: 'Categories', path: '/categories' },
   { icon: FiUsers, title: 'Customers', path: '/customers' },
 ]

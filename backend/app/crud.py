@@ -22,7 +22,7 @@ from app.models import (
     Order,
     OrderCreate,
     OrderItem,
-    OrderItemCreate,
+    # OrderItemCreate,
     OrderStatus,
     OrderUpdate,
     PaymentStatus,
@@ -33,6 +33,8 @@ from app.models import (
     User,
     UserCreate,
     UserUpdate,
+    Media,
+    MediaCreate,
 )
 
 HEX_DIGITS = set("0123456789abcdef")
@@ -726,3 +728,39 @@ def get_inventory_transactions(
     )
     transactions = session.exec(data_statement).all()
     return transactions, total
+
+
+def get_media(*, session: Session, media_id: uuid.UUID) -> Media | None:
+    return session.get(Media, media_id)
+
+
+def create_media_entry(*, session: Session, media_in: MediaCreate) -> Media:
+    media = Media.model_validate(media_in)
+    session.add(media)
+    session.commit()
+    session.refresh(media)
+    return media
+
+
+def list_media(
+    *,
+    session: Session,
+    skip: int = 0,
+    limit: int = 50,
+    search: str | None = None,
+) -> tuple[list[Media], int]:
+    statement = select(Media)
+    if search:
+        statement = statement.where(Media.file_name.ilike(f"%{search}%"))
+    count_statement = statement.with_only_columns(func.count()).order_by(None)
+    total = session.exec(count_statement).one()
+    data_statement = (
+        statement.order_by(Media.created_at.desc()).offset(skip).limit(limit)
+    )
+    media_items = session.exec(data_statement).all()
+    return media_items, total
+
+
+def delete_media(*, session: Session, media: Media) -> None:
+    session.delete(media)
+    session.commit()

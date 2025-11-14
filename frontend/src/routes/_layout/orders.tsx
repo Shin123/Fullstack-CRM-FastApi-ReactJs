@@ -278,7 +278,7 @@ function OrdersTable() {
                 <Table.Row key={order.id} opacity={isPlaceholderData ? 0.5 : 1}>
                   <Table.Cell>
                     <Link to="/orders/$orderId" params={{ orderId: order.id }}>
-                      <Text color="primary.500" fontWeight="medium">
+                      <Text color="#14b8a6" fontWeight="medium">
                         {order.order_number}
                       </Text>
                     </Link>

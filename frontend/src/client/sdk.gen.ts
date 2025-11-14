@@ -48,6 +48,12 @@ import type {
   LoginResetPasswordResponse,
   LoginRecoverPasswordHtmlContentData,
   LoginRecoverPasswordHtmlContentResponse,
+  MediaListMediaData,
+  MediaListMediaResponse,
+  MediaUploadMediaData,
+  MediaUploadMediaResponse,
+  MediaDeleteMediaData,
+  MediaDeleteMediaResponse,
   OrdersReadOrdersData,
   OrdersReadOrdersResponse,
   OrdersCreateOrderData,
@@ -625,6 +631,77 @@ export class LoginService {
       url: '/api/v1/password-recovery-html-content/{email}',
       path: {
         email: data.email,
+      },
+      errors: {
+        422: 'Validation Error',
+      },
+    })
+  }
+}
+
+export class MediaService {
+  /**
+   * List Media
+   * @param data The data for the request.
+   * @param data.skip
+   * @param data.limit
+   * @param data.query
+   * @returns MediaList Successful Response
+   * @throws ApiError
+   */
+  public static listMedia(
+    data: MediaListMediaData = {}
+  ): CancelablePromise<MediaListMediaResponse> {
+    return __request(OpenAPI, {
+      method: 'GET',
+      url: '/api/v1/media/',
+      query: {
+        skip: data.skip,
+        limit: data.limit,
+        query: data.query,
+      },
+      errors: {
+        422: 'Validation Error',
+      },
+    })
+  }
+
+  /**
+   * Upload Media
+   * @param data The data for the request.
+   * @param data.formData
+   * @returns MediaPublic Successful Response
+   * @throws ApiError
+   */
+  public static uploadMedia(
+    data: MediaUploadMediaData
+  ): CancelablePromise<MediaUploadMediaResponse> {
+    return __request(OpenAPI, {
+      method: 'POST',
+      url: '/api/v1/media/upload',
+      formData: data.formData,
+      mediaType: 'multipart/form-data',
+      errors: {
+        422: 'Validation Error',
+      },
+    })
+  }
+
+  /**
+   * Delete Media
+   * @param data The data for the request.
+   * @param data.mediaId
+   * @returns void Successful Response
+   * @throws ApiError
+   */
+  public static deleteMedia(
+    data: MediaDeleteMediaData
+  ): CancelablePromise<MediaDeleteMediaResponse> {
+    return __request(OpenAPI, {
+      method: 'DELETE',
+      url: '/api/v1/media/{media_id}',
+      path: {
+        media_id: data.mediaId,
       },
       errors: {
         422: 'Validation Error',

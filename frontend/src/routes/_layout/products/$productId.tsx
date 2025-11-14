@@ -23,6 +23,7 @@ import {
   InventoryService,
   ProductsService,
   UsersService,
+  OpenAPI,
 } from '@/client'
 import AdjustProductStock from '@/components/Products/AdjustProductStock'
 import DeleteProduct from '@/components/Products/DeleteProduct'
@@ -43,6 +44,17 @@ export const Route = createFileRoute('/_layout/products/$productId')({
 function ProductDetailPage() {
   const { productId } = Route.useParams()
   const { formatCurrency } = useCurrency()
+  const resolveMediaUrl = (url?: string | null) => {
+    if (!url) return undefined
+    const base = OpenAPI.BASE || ''
+    try {
+      return url.startsWith('http')
+        ? url
+        : new URL(url, base || window.location.origin).href
+    } catch {
+      return url
+    }
+  }
 
   const {
     data: product,
@@ -148,7 +160,8 @@ function ProductDetailPage() {
               </Text>
               <Image
                 src={
-                  product.thumbnail_image || '/assets/images/placeholder.png'
+                  resolveMediaUrl(product.thumbnail_image) ||
+                  '/assets/images/placeholder.png'
                 }
                 alt={product.name}
                 maxW="240px"
@@ -199,7 +212,7 @@ function ProductDetailPage() {
               {product.images.map((src) => (
                 <Image
                   key={src}
-                  src={src}
+                  src={resolveMediaUrl(src)}
                   alt={product.name}
                   boxSize="120px"
                   objectFit="cover"
