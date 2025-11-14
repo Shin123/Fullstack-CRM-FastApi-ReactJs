@@ -14,10 +14,7 @@ import type { IconType } from 'react-icons/lib'
 
 import type { UserPublic } from '@/client'
 
-const mainItems = [
-  { icon: FiHome, title: 'Dashboard', path: '/' },
-  { icon: FiBriefcase, title: 'Items', path: '/items' },
-]
+const mainItems = [{ icon: FiHome, title: 'Dashboard', path: '/' }]
 
 const storeItems = [
   { icon: FiShoppingCart, title: 'Orders', path: '/orders' },
